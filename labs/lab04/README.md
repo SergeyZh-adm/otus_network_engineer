@@ -160,6 +160,8 @@ GigabitEthernet0/0/0 is up, line protocol is up
   Hosts use stateless autoconfig for addresses.
 R1#
 ```
+Сохраняем конфигурацию маршрутизатора
+
 * Появилась группа многоадресной рассылки **FF02::2** для всех маршрутизаторов.  
 Это группа многоадресной рассылки, в которую включены все IPv6
 маршрутизаторы. Маршрутизатор становится частью этой группы,
@@ -176,8 +178,141 @@ R1#
 
 #### Настройка коммутатора.
 
+1. Назначаем адрес IPv6 - 2001:db8:acad:1::b/64 для интерфейса VLAN1 SW1. Также назначаем  интерфейсу локальный адрес канала fe80::b.
+```
+SW1(config)#
+SW1(config)#interface vlan 1
+SW1(config-if)#ipv6 address 2001:db8:acad:1::b/64
+SW1(config-if)#
+SW1(config-if)#
+SW1(config-if)#ipv6 address fe80::b link-local 
+SW1(config-if)#
+SW1(config-if)#^Z
+SW1#
+```
+Проверяем правильность назначения IPv6-адресов интерфейсу управления  командой **show ipv6 interface vlan 1**.
+```
+SW1#show ipv6 interface vlan 1
+Vlan1 is up, line protocol is up
+  IPv6 is enabled, link-local address is FE80::B
+  No Virtual link-local address(es):
+  Global unicast address(es):
+    2001:DB8:ACAD:1::B, subnet is 2001:DB8:ACAD:1::/64
+  Joined group address(es):
+    FF02::1
+    FF02::1:FF00:B
+  MTU is 1500 bytes
+  ICMP error messages limited to one every 100 milliseconds
+  ICMP redirects are enabled
+  ICMP unreachables are sent
+  Output features: Check hwidb
+  ND DAD is enabled, number of DAD attempts: 1
+  ND reachable time is 30000 milliseconds
+SW1#
+```
+ Интерфейсу Vlan 1 назначены указанные IPv6  адреса.
 
+2. Для доступа к коммутатору по протоколу ICMPv6 (проверка сетевой доступности командой **ping** с компьютера PC-B) необходимо на коммутаторе настроить шлюз по умолчанию - прописать статический маршрут по умолчанию к сети 2001:db8:acad:a::/64.
+```
+SW1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+SW1(config)#
+SW1(config)#ipv6 route ::/0 2001:DB8:ACAD:1::1
+SW1(config)#
+```
+Сохраним конфигурацию коммутатора.
 
+#### Настроика компьютеров.
+
+1. Назначаем компьютерам статические IPv6-адреса в соответствии с заданием.
+
+* В окне Свойства Ethernet для каждого ПК и назначаем адресацию IPv6.
+* Убеждаемся, что оба компьютера имеют правильную информацию адреса IPv6. Каждый компьютер должен иметь два глобальных адреса IPv6: один статический и один SLACC.
+Примечание. При выполнении работы в среде Cisco Packet Tracer установите статический и SLACC адреса на компьютеры последовательно, отразив результаты в отчете.
+
+Для компьютера PC-B:
+```
+C:\>ipconfig /all
+
+FastEthernet0 Connection:(default port)
+
+   Connection-specific DNS Suffix..: 
+   Physical Address................: 0001.C758.CE64
+   Link-local IPv6 Address.........: FE80::4
+   IPv6 Address....................: 2001:DB8:ACAD:A::4
+   IPv4 Address....................: 0.0.0.0
+   Subnet Mask.....................: 0.0.0.0
+   Default Gateway.................: FE80::1
+                                     0.0.0.0
+   DHCP Servers....................: 0.0.0.0
+   DHCPv6 IAID.....................: 
+   DHCPv6 Client DUID..............: 00-01-00-01-A2-62-83-75-00-01-C7-58-CE-64
+   DNS Servers.....................: ::
+                                     0.0.0.0
+```
+Для компьютера PC-A:
+```
+C:\>
+C:\>ipconfig /all
+
+FastEthernet0 Connection:(default port)
+
+   Connection-specific DNS Suffix..: 
+   Physical Address................: 0001.C91A.E04D
+   Link-local IPv6 Address.........: FE80::3
+   IPv6 Address....................: 2001:DB8:ACAD:1::3
+   IPv4 Address....................: 0.0.0.0
+   Subnet Mask.....................: 0.0.0.0
+   Default Gateway.................: FE80::1
+                                     0.0.0.0
+   DHCP Servers....................: 0.0.0.0
+   DHCPv6 IAID.....................: 
+   DHCPv6 Client DUID..............: 00-01-00-01-AC-68-98-15-00-01-C9-1A-E0-4D
+   DNS Servers.....................: ::
+                                     0.0.0.0
+```
+### 3. Проверка сквозного подключения.
+_______________
+
+1. С PC-A отправим эхо-запрос на FE80::1. Это локальный адрес канала, назначенный G0/0/1 на R1.
+```
+C:\>ping fe80::1
+
+Pinging fe80::1 with 32 bytes of data:
+
+Reply from FE80::1: bytes=32 time<1ms TTL=255
+Reply from FE80::1: bytes=32 time<1ms TTL=255
+Reply from FE80::1: bytes=32 time<1ms TTL=255
+Reply from FE80::1: bytes=32 time<1ms TTL=255
+
+Ping statistics for FE80::1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>
+```
+Эхо-ответ получен.
+
+2. Отправим эхо-запрос на интерфейс управления SW1 с PC-A.
+```
+Pinging 2001:db8:acad:1::b with 32 bytes of data:
+
+Reply from 2001:DB8:ACAD:1::B: bytes=32 time<1ms TTL=255
+Reply from 2001:DB8:ACAD:1::B: bytes=32 time<1ms TTL=255
+Reply from 2001:DB8:ACAD:1::B: bytes=32 time<1ms TTL=255
+Reply from 2001:DB8:ACAD:1::B: bytes=32 time<1ms TTL=255
+
+Ping statistics for 2001:DB8:ACAD:1::B:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>
+```
+Эхо-ответ получен.
+
+3. Введите команду **tracert** на PC-A, чтобы проверить наличие сквозного подключения к PC-B.
 
 
 
