@@ -228,7 +228,7 @@ SW1(config)#
 
 * В окне Свойства Ethernet для каждого ПК и назначаем адресацию IPv6.
 * Убеждаемся, что оба компьютера имеют правильную информацию адреса IPv6. Каждый компьютер должен иметь два глобальных адреса IPv6: один статический и один SLACC.
-Примечание. При выполнении работы в среде Cisco Packet Tracer установите статический и SLACC адреса на компьютеры последовательно, отразив результаты в отчете.
+
 
 Для компьютера PC-B:
 ```
@@ -313,11 +313,83 @@ C:\>
 Эхо-ответ получен.
 
 3. Введите команду **tracert** на PC-A, чтобы проверить наличие сквозного подключения к PC-B.
+```
+C:\>tracert 2001:db8:acad:a::3
+
+Tracing route to 2001:db8:acad:a::3 over a maximum of 30 hops: 
+
+  1   0 ms      0 ms      0 ms      2001:DB8:ACAD:1::1
+  2   0 ms      0 ms      0 ms      2001:DB8:ACAD:A::3
+
+Trace complete.
+```
+Трассировка до PC-B показывает наличие сквозного подключения.
+
+4. С PC-B отправим эхо-запрос на PC-A.
+```
+C:\>ping 2001:db8:acad:1::3
+
+Pinging 2001:db8:acad:1::3 with 32 bytes of data:
+
+Reply from 2001:DB8:ACAD:1::3: bytes=32 time<1ms TTL=127
+Reply from 2001:DB8:ACAD:1::3: bytes=32 time<1ms TTL=127
+Reply from 2001:DB8:ACAD:1::3: bytes=32 time<1ms TTL=127
+Reply from 2001:DB8:ACAD:1::3: bytes=32 time<1ms TTL=127
+
+Ping statistics for 2001:DB8:ACAD:1::3:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>
+```
+Эхо-ответ получен.
+
+5. С PC-B отправим эхо-запрос на FE80::1. Это локальный адрес канала, назначенный G0/0/0 на R1.
+```
+C:\>ping fe80::1
+
+Pinging fe80::1 with 32 bytes of data:
+
+Reply from FE80::1: bytes=32 time<1ms TTL=255
+Reply from FE80::1: bytes=32 time<1ms TTL=255
+Reply from FE80::1: bytes=32 time<1ms TTL=255
+Reply from FE80::1: bytes=32 time<1ms TTL=255
+
+Ping statistics for FE80::1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>
+```
+Эхо-ответ получен.
+
+6. с PC-B  отправим эхо-запрос на на интерфейс управления SW1
+```
+C:\>ping 2001:db8:acad:1::b
+
+Pinging 2001:db8:acad:1::b with 32 bytes of data:
+
+Reply from 2001:DB8:ACAD:1::B: bytes=32 time=2004ms TTL=254
+Reply from 2001:DB8:ACAD:1::B: bytes=32 time<1ms TTL=254
+Reply from 2001:DB8:ACAD:1::B: bytes=32 time<1ms TTL=254
+Reply from 2001:DB8:ACAD:1::B: bytes=32 time<1ms TTL=254
+
+Ping statistics for 2001:DB8:ACAD:1::B:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 2004ms, Average = 501ms
+```
+ Эхо-ответ получен, что показаывет правильную настройку шлюза по умолчанию на коммутаторе SW1. 
+______
+
+#### Вопрос для повторения.
 
 
+1. Какой идентификатор подсети в индивидуальном IPv6-адресе 2001:db8:acad::aaaa:1234/64 ?
 
-
-
+Сетевой префикс у IP  адреса **2001:db8:acad::aaaa:1234/64**  - /64, поэтому идентификатор подсети будет составлять 4 хекстета -2001:db8:acad:0, а  идентификатор хоста 4 хекстета - 0:0:aaaa:1234
 
 
 
