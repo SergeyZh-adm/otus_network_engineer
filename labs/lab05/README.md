@@ -9,7 +9,7 @@
 
 [3. Настройка коммутатора для доступа по протоколу SSH.](README.md#3-настройка-коммутатора-для-доступа-по-протоколу-ssh)
 
-4. SSH через интерфейс командной строки (CLI) коммутатора.
+[4. SSH через интерфейс командной строки (CLI) коммутатора.](README.md#4-настройка-протокола-ssh-с-использованием-интерфейса-командной-строки-cli-коммутатора)
 
 ## Решение.
 #### 1. Настройка основных параметров устройств.
@@ -140,5 +140,140 @@ R1#
 Соединение установлено. Настройка выполнена верно.
 
 #### 3. Настройка коммутатора для доступа по протоколу SSH.
+3. 1  Настроим аутентификацию устройств. Создаим ключ шифрования с указанием его длины и укажем актуальную версию SSH.
+```
+SW1(config)#ip domain name mydomain.ru
+SW1(config)#
+SW1(config)#
+SW1(config)#crypto key ?
+  generate  Generate new keys
+  zeroize   Remove keys
+SW1(config)#
+SW1(config)#crypto key generate rsa 
+The name for the keys will be: SW1.mydomain.ru
+Choose the size of the key modulus in the range of 360 to 2048 for your
+  General Purpose Keys. Choosing a key modulus greater than 512 may take
+  a few minutes.
+
+How many bits in the modulus [512]: 2048
+% Generating 2048 bit RSA keys, keys will be non-exportable...[OK]
+SW1(config)#
+*Mar 1 2:2:7.817: %SSH-5-ENABLED: SSH 1.99 has been enabled
+SW1(config)#
+SW1(config)#
+SW1(config)#ip ssh version 2
+SW1(config)#
+SW1(config)#^Z
+SW1#
+%SYS-5-CONFIG_I: Configured from console by console
+
+SW1#sh ip ssh
+SSH Enabled - version 2.0
+Authentication timeout: 120 secs; Authentication retries: 3
+SW1#
+```
+3. 2 Создадим имя пользователя в локальной базе учетных записей и укажем уровень привелегий и пароль для него.
+```
+SW1#
+SW1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+SW1(config)#
+SW1(config)#username sshadmin privilege 15 secret cisco
+SW1(config)#
+```
+3. 3  Активируем протокол SSH на линиях VTY.
+
+Активируем протокол SSH на входящих линиях VTY с помощью команды **transport input** и изменим способ входа в систему таким образом, чтобы использовалась проверка пользователей по локальной базе учетных записей.
+```
+SW1(config)#
+SW1(config)#line vty 0 4
+SW1(config-line)#
+SW1(config-line)#login local
+SW1(config-line)#
+SW1(config-line)#transport input ssh
+SW1(config-line)#
+```
+3. 4  С PC-A установим соединение с коммутатором по протоколу SSH.
+
+```
+C:\>
+C:\>SSH -l sshadmin 192.168.1.11
+
+Password: 
+
+
+************************************************
+**************ATTENTION*************************
+
+************************************************
+
+SW1#
+```
+Соединение установлено. Настройка выполнена верно.
+
+#### 4. Настройка протокола SSH с использованием интерфейса командной строки (CLI) коммутатора.
+
+Клиент SSH встроен в операционную систему Cisco IOS и может запускаться из интерфейса командной строки.
+
+Посмотрим доступные параметры для клиента SSH в Cisco IOS.
+```
+SW1#ssh ?
+  -l  Log in using this user name
+  -v  Specify SSH Protocol Version
+SW1#
+```
+* Чтобы подключиться к маршрутизатору R1 по протоколу SSH от имени sshadmin, введите команду ssh с ключем –l . 
+```
+SW1#ssh -l sshadmin 192.168.1.1
+
+
+Password: 
+
+
+***********************************************
+*****************ATTENTION*********************
+***********************************************
+
+R1#
+```
+* Чтобы вернуться к коммутатору S1, не закрывая сеанс SSH с маршрутизатором R1, нажмите комбинацию клавиш Ctrl+Shift+6. Отпустите клавиши Ctrl+Shift+6 и нажмите x. Отображается приглашение привилегированного режима EXEC коммутатора.  
+Чтобы вернуться к сеансу SSH на R1, нажмите клавишу Enter в пустой строке интерфейса командной строки. Чтобы увидеть окно командной строки маршрутизатора, нажмите клавишу Enter еще раз.
+```
+R1#
+SW1#
+SW1#
+[Resuming connection 1 to 192.168.1.1 ... ]
+
+R1#
+SW1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+SW1(config)#
+```
+* Чтобы завершить сеанс SSH на маршрутизаторе R1, введите в командной строке маршрутизатора команду exit.
+```
+R1#
+R1#exit
+
+[Connection to 192.168.1.1 closed by foreign host]
+SW1#
+SW1#
+```
+
+Какие версии протокола SSH поддерживаются при использовании интерфейса командной строки?
+ - Это можно определить с помощью ssh –v ? в командной строке.
+ ```
+ SW1#ssh -v ?
+  1  Protocol Version 1
+  2  Protocol Version 2
+SW1#ssh -v 
+ ```
+Коммутатор 2960 под управлением IOS версии 15.0(2) поддерживает SSH v1 и V2.
+
+### Вопрос для повторения
+Как предоставить доступ к сетевому устройству нескольким пользователям, у каждого из которых есть собственное имя пользователя?
+
+>Необходимо добавить имя пользователя и пароль каждого пользователя в локальную базу данных с помощью команды **username** и предоставить определенные права (привелегии) каждому пользователю.
+
+
 
 
