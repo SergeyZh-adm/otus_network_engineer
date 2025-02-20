@@ -76,3 +76,68 @@
 -----------------
 >Cоздадим VLAN, как указано в таблице выше, на обоих коммутаторах. Затем  назначим VLAN соответствующему интерфейсу и проверим настройки конфигурации. 
 
+Шаг 1. Создайте сети VLAN на коммутаторах.
+
+* a.	Создадим и присвоим имена необходимым VLAN на каждом коммутаторе из таблицы выше.
+~~~
+SW1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+SW1(config)#
+SW1(config)#vlan 10
+SW1(config-vlan)#
+SW1(config-vlan)#name Control
+SW1(config-vlan)#exit
+SW1(config)#vlan 20
+SW1(config-vlan)#name Sales1
+SW1(config-vlan)#exit
+SW1(config)#vlan 30
+SW1(config-vlan)#
+SW1(config-vlan)#name Operation
+SW1(config-vlan)#exit
+SW1(config)#vlan 999
+SW1(config-vlan)#
+SW1(config-vlan)#name Parking_Lot
+SW1(config-vlan)#exit
+SW1(config)#vlan 1000
+SW1(config-vlan)#
+SW1(config-vlan)#name Native
+SW1(config-vlan)#exit
+SW1(config)
+~~~
+
+На коммутаторе SW2 сделаем аналогичные настройки VLAN.
+
+~~~
+SW1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+SW2(config)#
+SW2(config)#vlan 10
+SW2(config-vlan)#
+SW2(config-vlan)#name Control
+SW2(config-vlan)#exit
+SW2(config)#vlan 20
+SW2(config-vlan)#name Sales1
+SW2(config-vlan)#exit
+SW2(config)#vlan 30
+SW2(config-vlan)#
+SW2(config-vlan)#name Operation
+SW2(config-vlan)#exit
+SW2(config)#vlan 999
+SW2(config-vlan)#
+SW2(config-vlan)#name Parking_Lot
+SW2(config-vlan)#exit
+SW2(config)#vlan 1000
+SW2(config-vlan)#
+SW2(config-vlan)#name Native
+SW2(config-vlan)#exit
+SW2(config)
+~~~
+
+* Настройте интерфейс управления и шлюз по умолчанию на каждом коммутаторе, используя информацию об IP-адресе в таблице адресации. 
+
+
+
+
+
+
+
