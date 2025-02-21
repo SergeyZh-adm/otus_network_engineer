@@ -235,7 +235,40 @@ VLAN Name                             Status    Ports
 ### 3. Конфигурация магистрального канала стандарта 802.1Q между коммутаторами.
 ---------------------
 
-Шаг 1. Вручную настройте магистральный интерфейс F0/1 на коммутаторах S1 и S2.
+Шаг 1. Вручную настроим магистральный интерфейс G0/1 на коммутаторах SW1 и SW2.
+
+* Настройка статического транкинга и нативного VLAN на интерфейсе G0/1 для обоих коммутаторов.
+
+~~~
+SW1(config)#
+SW1(config)#int gig0/1
+SW1(config-if)#switchport mode trunk
+SW1(config-if)#
+SW1(config-if)#switchport trunk native vlan 1000
+SW1(config-if)#
+SW1(config-if)#
+SW1(config-if)#exit
+SW1(config)#
+~~~
+* Указываем, что VLAN 10, 20, 30 и 1000 могут проходить по транку и отключаем Протокол динамического транкинга (DTP).
+~~~
+SW1(config)#
+SW1(config)#int gig0/1
+SW1(config-if)#
+SW1(config-if)#switchport trunk allowed vlan 10,20,30,1000
+SW1(config-if)#
+SW1(config-if)#switchport nonegotiate
+SW1(config-if)#
+SW1(config-if)#exit
+SW1(config)#
+~~~
+При этом транк будет недоступен для VLAN 999 и VLAN 1.
+
+
+Шаг 2. Вручную настроим магистральный интерфейс G0/2 на коммутаторе SW1. Это будет транк до маршрутизатора.
+
+* Настройки транка на интерфейсе G0/2 коммутатора SW1 аналогичны настройкам интерфейса G0/1.
+
 
 
 
