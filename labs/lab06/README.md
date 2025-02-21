@@ -164,7 +164,7 @@ SW1(config-if-range)#exit
 SW1(config)#
 ~~~
 
-* Назначим используемые порты соответствующей VLAN (указанной в таблице VLAN выше) и настроим их для режима статического доступа.
+Шаг 2. Назначим используемые порты соответствующей VLAN (указанной в таблице VLAN выше) и настроим их для режима статического доступа.
 ~~~
 
 SW1(config)#int fa0/1
@@ -180,7 +180,8 @@ SW1(config-if)#
 SW1(config-if)#exit
 SW1(config)#
 ~~~
-* посмотрим таблицу VLAN  на коммутаторе.
+* посмотрим таблицу VLAN  на коммутаторe SW1.
+
 ~~~
 SW1(config)#do sh vlan
 
@@ -207,8 +208,34 @@ VLAN Name                             Status    Ports
 
 * Проведем аналогичные настройки на коммутаторе SW2  с учетом используемых портов коммутатора SW2.
 
+посмотрим таблицу VLAN  на коммутаторe SW2.
+~~~
+SW2#sh vlan
+
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    Gig0/1
+10   Control                          active    Fa0/3
+20   Sales                            active    Fa0/1
+30   Operation                        active    Fa0/2
+999  Parking_Lot                      active    Fa0/4, Fa0/5, Fa0/6, Fa0/7
+                                                Fa0/8, Fa0/9, Fa0/10, Fa0/11
+                                                Fa0/12, Fa0/13, Fa0/14, Fa0/15
+                                                Fa0/16, Fa0/17, Fa0/18, Fa0/19
+                                                Fa0/20, Fa0/21, Fa0/22, Fa0/23
+                                                Fa0/24, Gig0/2
+1000 Native                           active    
+1002 fddi-default                     active    
+1003 token-ring-default               active    
+1004 fddinet-default                  active    
+1005 trnet-default                    active    
+~~~
 
 
+### 3. Конфигурация магистрального канала стандарта 802.1Q между коммутаторами.
+---------------------
+
+Шаг 1. Вручную настройте магистральный интерфейс F0/1 на коммутаторах S1 и S2.
 
 
 
