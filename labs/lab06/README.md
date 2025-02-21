@@ -88,7 +88,7 @@ SW1(config-vlan)#
 SW1(config-vlan)#name Control
 SW1(config-vlan)#exit
 SW1(config)#vlan 20
-SW1(config-vlan)#name Sales1
+SW1(config-vlan)#name Sales
 SW1(config-vlan)#exit
 SW1(config)#vlan 30
 SW1(config-vlan)#
@@ -110,7 +110,105 @@ SW1(config)
 
 * Настроим интерфейс управления и шлюз по умолчанию на каждом коммутаторе, используя информацию об IP-адресе в таблице адресации. 
 
+Коммутатор SW1
 ~~~
+SW1(config)#
+SW1(config)#ip default-gateway 192.168.10.1
+SW1(config)#int vlan 10
+SW1(config-if)#
+%LINK-5-CHANGED: Interface Vlan10, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan10, changed state to up
+
+SW1(config-if)#ip address 192.168.10.11 255.255.255.0
+SW1(config-if)#
+SW1(config-if)#exit
+SW1(config)#
+~~~
+
+Коммутатор  SW2
+~~~
+SW2(config)#
+SW2(config)#ip default-gateway 192.168.10.1
+SW2(config)#int vlan 10
+SW2(config-if)#
+%LINK-5-CHANGED: Interface Vlan10, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan10, changed state to up
+
+SW2(config-if)#ip address 192.168.10.12 255.255.255.0
+SW2(config-if)#
+SW2(config-if)#exit
+SW2(config)#
+~~~
+
+* Назначим все неиспользуемые порты коммутатора VLAN Parking_Lot, настроим их для статического режима доступа и административно деактивируем их.
+
+~~~
+SW1(config)#
+SW1(config)#
+SW1(config)#int range fa0/1-24
+SW1(config-if-range)#
+SW1(config-if-range)#
+SW1(config-if-range)#switchport mode access
+SW1(config-if-range)#
+SW1(config-if-range)#
+SW1(config-if-range)#exit
+SW1(config-if)#
+SW1(config-if)#exit
+SW1(config)#int range fa0/3-24
+SW1(config-if-range)#switchport access vlan 999
+SW1(config-if-range)#
+SW1(config-if-range)#shut
+SW1(config-if-range)#exit
+SW1(config)#
+~~~
+
+* Назначим используемые порты соответствующей VLAN (указанной в таблице VLAN выше) и настроим их для режима статического доступа.
+~~~
+
+SW1(config)#int fa0/1
+SW1(config-if)#
+SW1(config-if)#switchport access vlan 30
+SW1(config-if)#
+SW1(config-if)#exit
+SW1(config)#
+SW1(config)#int fa0/2
+SW1(config-if)#
+SW1(config-if)#switchport access vlan 20
+SW1(config-if)#
+SW1(config-if)#exit
+SW1(config)#
+~~~
+* посмотрим таблицу VLAN  на коммутаторе.
+~~~
+SW1(config)#do sh vlan
+
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    Gig0/1, Gig0/2
+10   Control                          active    
+20   Sales                            active    Fa0/2
+30   Operation                        active    Fa0/1
+999  Parking_Lot                      active    Fa0/3, Fa0/4, Fa0/5, Fa0/6
+                                                Fa0/7, Fa0/8, Fa0/9, Fa0/10
+                                                Fa0/11, Fa0/12, Fa0/13, Fa0/14
+                                                Fa0/15, Fa0/16, Fa0/17, Fa0/18
+                                                Fa0/19, Fa0/20, Fa0/21, Fa0/22
+                                                Fa0/23, Fa0/24
+1000 Native                           active    
+1002 fddi-default                     active    
+1003 token-ring-default               active    
+1004 fddinet-default                  active    
+1005 trnet-default                    active    
+~~~
+
+
+
+* Проведем аналогичные настройки на коммутаторе SW2  с учетом используемых портов коммутатора SW2.
+
+
+
 
 
 
