@@ -408,22 +408,22 @@ Enter configuration commands, one per line.  End with CNTL/Z.
 R1(config)#
 R1(config)#
 !
-!   Создаем подинтерфейс gig0/0/0.10
+!   Создаем подинтерфейс gig0/0/1.10
 !
-R1(config)#int gig0/0/0.10
+R1(config)#int gig0/0/1.10
 R1(config-subif)#
 R1(config-subif)#
 !
-!   Назначаем субинтерфейс gig0/0/0.10 в VLAN 10
+!   Назначаем субинтерфейс gig0/0/1.10 в VLAN 10
 !
 R1(config-subif)#encapsulation dot1Q 10
 R1(config-subif)#
 !
-!   назначаем IP адрес подинтерфейсу gig0/0/0.10
+!   назначаем IP адрес подинтерфейсу gig0/0/1.10
 !
 R1(config-subif)#ip address 192.168.10.1 255.255.255.0
 R1(config-subif)#
-R1(config-subif)#int gig0/0/0.20
+R1(config-subif)#int gig0/0/1.20
 R1(config-subif)#
 R1(config-subif)#encapsulation dot1Q 20
 R1(config-subif)#
@@ -431,55 +431,193 @@ R1(config-subif)#
 R1(config-subif)#ip address 192.168.20.1 255.255.255.0
 R1(config-subif)#
 R1(config-subif)#
-R1(config-subif)#int gig0/0/0.30
+R1(config-subif)#int gig0/0/1.30
 R1(config-subif)#
 R1(config-subif)#encapsulation dot1Q 30
 R1(config-subif)#
 R1(config-subif)#ip address 192.168.30.1 255.255.255.0
 R1(config-subif)#
 R1(config-subif)#exit
-R1(config)#int gig0/0/0.1000
-R1(config-subif)##encapsulation dot1Q 100 native 
+!
+!   Назначаем субинтерфейс для нативного VLAN 1000 gig0/0/1.1000
+!
+R1(config)#int gig0/0/1.1000
+R1(config-subif)#encapsulation dot1Q 1000 native 
 R1(config-subif)#
 R1(config-subif)#
 R1(config-subif)#exit
-R1(config)#int gig0/0/0
+!
+!   Физически включаем интерфейс G0/0/1  и все подинтерфейсы.
+!
+R1(config)#int gig0/0/1
 R1(config-if)#no shut
-
 R1(config-if)#
-%LINK-5-CHANGED: Interface GigabitEthernet0/0/0, changed state to up
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/1, changed state to up
 
-%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/0, changed state to up
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/1, changed state to up
 
-%LINK-5-CHANGED: Interface GigabitEthernet0/0/0.10, changed state to up
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/1.10, changed state to up
 
-%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/0.10, changed state to up
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/1.10, changed state to up
 
-%LINK-5-CHANGED: Interface GigabitEthernet0/0/0.20, changed state to up
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/1.20, changed state to up
 
-%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/0.20, changed state to up
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/1.20, changed state to up
 
-%LINK-5-CHANGED: Interface GigabitEthernet0/0/0.30, changed state to up
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/1.30, changed state to up
 
-%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/0.30, changed state to up
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/1.30, changed state to up
 
-%LINK-5-CHANGED: Interface GigabitEthernet0/0/0.100, changed state to up
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/1.1000, changed state to up
 
-%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/0.100, changed state to up
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/1.1000, changed state to up
 
 R1(config-if)#
 R1(config-if)#
 R1(config-if)#exit
 R1(config)#
+~~~
 
+* Убедитесь, что вспомогательные интерфейсы работают.
+  
 
+~~~
+R1#sh ip int br
+Interface              IP-Address      OK? Method Status                Protocol 
+GigabitEthernet0/0/0   unassigned      YES NVRAM  administratively down down 
+GigabitEthernet0/0/1   unassigned      YES NVRAM  up                    up 
+GigabitEthernet0/0/1.10192.168.10.1    YES NVRAM  up                    up 
+GigabitEthernet0/0/1.20192.168.20.1    YES NVRAM  up                    up 
+GigabitEthernet0/0/1.30192.168.30.1    YES NVRAM  up                    up 
+GigabitEthernet0/0/1.1000unassigned      YES NVRAM  up                    up 
+GigabitEthernet0/0/2   unassigned      YES NVRAM  administratively down down 
+Vlan1                  unassigned      YES NVRAM  administratively down down
+R1#
+R1#
+R1#ping 192.168.10.1
 
-c.	Убедитесь, что вспомогательные интерфейсы работают
-Закройте окно настройки.
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.10.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 0/4/8 ms
 
+R1#ping 192.168.20.1
 
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.20.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 0/7/11 ms
 
+R1#ping 192.168.30.1
 
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.30.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 7/8/9 ms
 
+R1#
+~~~
 
+Подинтерфейсы включены и работают.
+
+### 5. Проверьте, работает ли маршрутизация между VLAN.
+---------------------
+
+Шаг 1. Выполним следующие тесты с PC-1. Все должно быть успешно.
+
+* Отправьте эхо-запрос с PC1 на шлюз по умолчанию.
+~~~
+C:\>ping 192.168.20.1
+
+Pinging 192.168.20.1 with 32 bytes of data:
+
+Request timed out.
+Reply from 192.168.20.1: bytes=32 time<1ms TTL=255
+Reply from 192.168.20.1: bytes=32 time<1ms TTL=255
+Reply from 192.168.20.1: bytes=32 time<1ms TTL=255
+
+Ping statistics for 192.168.20.1:
+    Packets: Sent = 4, Received = 3, Lost = 1 (25% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>
+~~~
+Эхо-ответ получен.
+
+* b.	Отправьте эхо-запрос с PC1 на PC2 и PC5 
+~~~
+C:\>ping 192.168.30.3
+
+Pinging 192.168.30.3 with 32 bytes of data:
+
+Request timed out.
+Reply from 192.168.30.3: bytes=32 time<1ms TTL=127
+Reply from 192.168.30.3: bytes=32 time<1ms TTL=127
+Reply from 192.168.30.3: bytes=32 time<1ms TTL=127
+
+Ping statistics for 192.168.30.3:
+    Packets: Sent = 4, Received = 3, Lost = 1 (25% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>ping 192.168.10.10
+
+Pinging 192.168.10.10 with 32 bytes of data:
+
+Request timed out.
+Reply from 192.168.10.10: bytes=32 time<1ms TTL=127
+Reply from 192.168.10.10: bytes=32 time<1ms TTL=127
+Reply from 192.168.10.10: bytes=32 time<1ms TTL=127
+
+Ping statistics for 192.168.10.10:
+    Packets: Sent = 4, Received = 3, Lost = 1 (25% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>
+~~~
+Эхо-ответ получен.
+
+* Отправьте команду ping с компьютера PC1 на коммутатор SW2.
+
+~~~
+C:\>ping 192.168.10.12
+
+Pinging 192.168.10.12 with 32 bytes of data:
+
+Reply from 192.168.10.12: bytes=32 time<1ms TTL=254
+Reply from 192.168.10.12: bytes=32 time<1ms TTL=254
+Reply from 192.168.10.12: bytes=32 time<1ms TTL=254
+Reply from 192.168.10.12: bytes=32 time<1ms TTL=254
+
+Ping statistics for 192.168.10.12:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>
+~~~
+Эхо -ответ получен.
+
+* В окне командной строки на PC2 выполните команду **tracert** на адрес PC1.
+~~~
+
+C:\>
+C:\>tracert 192.168.20.3
+
+Tracing route to 192.168.20.3 over a maximum of 30 hops: 
+
+  1   0 ms      0 ms      0 ms      192.168.30.1
+  2   0 ms      0 ms      0 ms      192.168.20.3
+
+Trace complete.
+
+C:\>
+~~~
+
+Вопрос:
+Какие промежуточные IP-адреса отображаются в результатах?
+
+В результатах вывода команды **tracert** видим, что отображается промежуточный IP адрес субинтерфейса gig0/0/1.30 роутера. Через него идет межсетевое взаимодействие VLAN 30, куда входит PC2 (шлюз по умолчанию для PC1).
 
