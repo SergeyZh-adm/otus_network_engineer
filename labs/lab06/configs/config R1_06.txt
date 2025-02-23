@@ -1,6 +1,6 @@
 Building configuration...
 
-Current configuration : 1679 bytes
+Current configuration : 1686 bytes
 !
 version 15.4
 no service timestamps log datetime msec
@@ -12,7 +12,7 @@ hostname R1
 login block-for 120 attempts 3 within 60
 !
 !
-enable secret 5 $1$mERr$9cTjUIEqNGurQiFU.ZeCi1
+enable secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
 !
 !
 !
@@ -34,6 +34,7 @@ username sshadmin privilege 15 secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
 !
 !
 ip ssh version 2
+no ip domain-lookup
 ip domain-name mydomain.ru
 !
 !
@@ -48,28 +49,28 @@ interface GigabitEthernet0/0/0
  no ip address
  duplex auto
  speed auto
-!
-interface GigabitEthernet0/0/0.10
- encapsulation dot1Q 10
- ip address 192.168.10.1 255.255.255.0
-!
-interface GigabitEthernet0/0/0.20
- encapsulation dot1Q 20
- ip address 192.168.20.1 255.255.255.0
-!
-interface GigabitEthernet0/0/0.30
- encapsulation dot1Q 30
- ip address 192.168.30.1 255.255.255.0
-!
-interface GigabitEthernet0/0/0.100
- encapsulation dot1Q 100 native
- no ip address
+ shutdown
 !
 interface GigabitEthernet0/0/1
  no ip address
  duplex auto
  speed auto
- shutdown
+!
+interface GigabitEthernet0/0/1.10
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+!
+interface GigabitEthernet0/0/1.20
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+!
+interface GigabitEthernet0/0/1.30
+ encapsulation dot1Q 30
+ ip address 192.168.30.1 255.255.255.0
+!
+interface GigabitEthernet0/0/1.1000
+ encapsulation dot1Q 1000 native
+ no ip address
 !
 interface GigabitEthernet0/0/2
  no ip address
@@ -93,9 +94,9 @@ ip access-list extended sl_def_acl
  permit tcp any any eq 22
 !
 banner motd ^C
-***********************************************
-***************ATTENTION***********************
-***********************************************^C
+************************************************
+*************ATTENTION**************************
+************************************************^C
 !
 !
 !
@@ -108,10 +109,10 @@ line con 0
  login
 !
 line aux 0
+ login
 !
 line vty 0 4
  exec-timeout 5 0
- password 7 0822404F1A0A
  logging synchronous
  login local
  transport input ssh
@@ -119,3 +120,6 @@ line vty 0 4
 !
 !
 end
+
+
+R1#
