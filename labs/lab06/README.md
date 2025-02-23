@@ -151,7 +151,7 @@ SW1(config)#int range fa0/1-24
 SW1(config-if-range)#
 SW1(config-if-range)#
 SW1(config-if-range)#switchport mode access
-SW1(config-if-range)#
+SW1(config-if-range)#switchport nonegotiate
 SW1(config-if-range)#
 SW1(config-if-range)#exit
 SW1(config-if)#
@@ -264,15 +264,218 @@ SW1(config)#
 ~~~
 При этом транк будет недоступен для VLAN 999 и VLAN 1.
 
+* Проведем аналогичные настройки на коммутаторе SW2  с учетом используемых портов коммутатора SW2.
+
 
 Шаг 2. Вручную настроим магистральный интерфейс G0/2 на коммутаторе SW1. Это будет транк до маршрутизатора.
 
 * Настройки транка на интерфейсе G0/2 коммутатора SW1 аналогичны настройкам интерфейса G0/1.
 
 
+Посмотрим таблицу настройки VLAN  и портов на коммутаторе SW1
+
+~~~
+SW1#
+SW1#sh vlan br
+
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    
+10   Control                          active    
+20   Sales                            active    Fa0/2
+30   Operation                        active    Fa0/1
+999  Parking_Lot                      active    Fa0/3, Fa0/4, Fa0/5, Fa0/6
+                                                Fa0/7, Fa0/8, Fa0/9, Fa0/10
+                                                Fa0/11, Fa0/12, Fa0/13, Fa0/14
+                                                Fa0/15, Fa0/16, Fa0/17, Fa0/18
+                                                Fa0/19, Fa0/20, Fa0/21, Fa0/22
+                                                Fa0/23, Fa0/24
+1000 Native                           active    
+1002 fddi-default                     active    
+1003 token-ring-default               active    
+1004 fddinet-default                  active    
+1005 trnet-default                    active    
+SW1#
+~~~
+Посмотрим таблицу настройки VLAN  и портов на коммутаторе SW2
+~~~
+SW2#sh vlan br
+
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    
+10   Control                          active    Fa0/3
+20   Sales                            active    Fa0/1
+30   Operation                        active    Fa0/2
+999  Parking_Lot                      active    Fa0/4, Fa0/5, Fa0/6, Fa0/7
+                                                Fa0/8, Fa0/9, Fa0/10, Fa0/11
+                                                Fa0/12, Fa0/13, Fa0/14, Fa0/15
+                                                Fa0/16, Fa0/17, Fa0/18, Fa0/19
+                                                Fa0/20, Fa0/21, Fa0/22, Fa0/23
+                                                Fa0/24, Gig0/2
+1000 Native                           active    
+1002 fddi-default                     active    
+1003 token-ring-default               active    
+1004 fddinet-default                  active    
+1005 trnet-default                    active    
+SW2#
+~~~
+Все неиспользуемые порты коммутатра отключены и переведены в VLAN 999 (по умолчанию).  
+Используемые порты переведены в требуемые VLAN, а порты G0/1 и G0/2 коммутатора SW1  переведены в нативный VLAN 1000
+
+
+Шаг 3. Проверка настройки тракинга на коммутаторах.
+
+Проверим связанность PC1 и PC4, входящие в VLAN 20.  
+C PC1 проверим связанность с PC4.
+~~~
+C:\>
+C:\>ping 192.168.20.2
+
+Pinging 192.168.20.2 with 32 bytes of data:
+
+Reply from 192.168.20.2: bytes=32 time<1ms TTL=128
+Reply from 192.168.20.2: bytes=32 time<1ms TTL=128
+Reply from 192.168.20.2: bytes=32 time<1ms TTL=128
+Reply from 192.168.20.2: bytes=32 time=1ms TTL=128
+
+Ping statistics for 192.168.20.2:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 1ms, Average = 0ms
+~~~
+
+C PC4 проверим связанность с PC1
+~~~
+C:\>ping 192.168.20.3
+Pinging 192.168.20.3 with 32 bytes of data:
+
+Reply from 192.168.20.3: bytes=32 time=2ms TTL=128
+Reply from 192.168.20.3: bytes=32 time<1ms TTL=128
+Reply from 192.168.20.3: bytes=32 time<1ms TTL=128
+Reply from 192.168.20.3: bytes=32 time=8ms TTL=128
+
+Ping statistics for 192.168.20.3:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 8ms, Average = 2ms
+
+C:\>
+~~~
+
+ Но с ПК входящие в другие VLAN (VLAN 10, VLAN 30) связанности нет.
+ ~~~
+ C:\>
+C:\>ping 192.168.30.3
+
+Pinging 192.168.30.3 with 32 bytes of data:
+
+Request timed out.
+Request timed out.
+Request timed out.
+Request timed out.
+
+Ping statistics for 192.168.30.3:
+    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss),
+
+C:\>
+C:\>ping 192.168.10.10
+
+Pinging 192.168.10.10 with 32 bytes of data:
+
+Request timed out.
+Request timed out.
+Request timed out.
+Request timed out.
+
+Ping statistics for 192.168.10.10:
+    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss),
+
+C:\>
+~~~
+Таким образом связанность существует только в пределах одного и того же VLAN.
+
+Для связанности между всеми узлами сети необходимо настроить внутресетевую маршрутизацию на маршрутизаторе R1.
+
+### 4. Настройка маршрутизации между сетями VLAN
+----------------------
+>Настроим подинтерфейсы для каждой VLAN, как указано в таблице IP-адресации.  
+Все подинтерфейсы используют инкапсуляцию 802.1Q. Убедитесь, что подинтерфейсу для native VLAN не назначен IP-адрес.  
+Включите описание для каждого подинтерфейса. При необходимости активируйте интерфейс G0/0/1 на маршрутизаторе.
+~~~
+R1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#
+R1(config)#
+!
+!   Создаем подинтерфейс gig0/0/0.10
+!
+R1(config)#int gig0/0/0.10
+R1(config-subif)#
+R1(config-subif)#
+!
+!   Назначаем субинтерфейс gig0/0/0.10 в VLAN 10
+!
+R1(config-subif)#encapsulation dot1Q 10
+R1(config-subif)#
+!
+!   назначаем IP адрес подинтерфейсу gig0/0/0.10
+!
+R1(config-subif)#ip address 192.168.10.1 255.255.255.0
+R1(config-subif)#
+R1(config-subif)#int gig0/0/0.20
+R1(config-subif)#
+R1(config-subif)#encapsulation dot1Q 20
+R1(config-subif)#
+R1(config-subif)#
+R1(config-subif)#ip address 192.168.20.1 255.255.255.0
+R1(config-subif)#
+R1(config-subif)#
+R1(config-subif)#int gig0/0/0.30
+R1(config-subif)#
+R1(config-subif)#encapsulation dot1Q 30
+R1(config-subif)#
+R1(config-subif)#ip address 192.168.30.1 255.255.255.0
+R1(config-subif)#
+R1(config-subif)#exit
+R1(config)#int gig0/0/0.1000
+R1(config-subif)##encapsulation dot1Q 100 native 
+R1(config-subif)#
+R1(config-subif)#
+R1(config-subif)#exit
+R1(config)#int gig0/0/0
+R1(config-if)#no shut
+
+R1(config-if)#
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/0, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/0, changed state to up
+
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/0.10, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/0.10, changed state to up
+
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/0.20, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/0.20, changed state to up
+
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/0.30, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/0.30, changed state to up
+
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/0.100, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/0.100, changed state to up
+
+R1(config-if)#
+R1(config-if)#
+R1(config-if)#exit
+R1(config)#
 
 
 
+c.	Убедитесь, что вспомогательные интерфейсы работают
+Закройте окно настройки.
 
 
 
