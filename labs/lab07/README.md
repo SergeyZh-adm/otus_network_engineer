@@ -259,8 +259,101 @@ C:\>
 ```
 Маршрутизатор R1 доступен с ПК PC0. Связанность сети имеется.
 
-Топология сети будет иметь следующий вид.
++ Топология сети будет иметь следующий вид.
+
 ![](Топология_07_3.PNG)
+
+Шаг 4:	Отобразите данные протокола spanning-tree.
+
+> Введите команду **show spanning-tree** на всех трех коммутаторах. Приоритет идентификатора моста рассчитывается путем сложения значений приоритета и расширенного идентификатора системы. Расширенным идентификатором системы всегда является номер сети VLAN.  
+ В примере ниже все три коммутатора имеют равные значения приоритета идентификатора моста (32769 = 32768 + 1, где приоритет по умолчанию = 32768, номер сети VLAN = 1); следовательно, коммутатор с самым низким значением MAC-адреса становится корневым мостом (в примере — SW1).
+
+ * Введем команду **show spanning-tree** на коммутаторе SW1
+ ```
+ SW1#
+SW1#show spanning-tree
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32769
+             Address     0001.C98C.2155
+             This bridge is the root
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+
+  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
+             Address     0001.C98C.2155
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
+
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/2            Desg FWD 19        128.2    P2p
+Fa0/4            Desg FWD 19        128.4    P2p
+SW1#
+```
+
+* Введем команду **show spanning-tree** на коммутаторе SW2.
+```
+SW2#
+SW2#show spanning-tree
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32769
+             Address     0001.C98C.2155
+             Cost        19
+             Port        2(FastEthernet0/2)
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+
+  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
+             Address     0030.F237.0CEE
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
+
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/2            Root FWD 19        128.2    P2p
+Fa0/4            Desg FWD 19        128.4    P2p
+Fa0/5            Desg FWD 19        128.5    P2p
+
+SW2#
+```
+* Введем команду **show spanning-tree** на коммутаторе SW3
+
+```
+SW3#
+SW3#
+SW3#show spanning-tree
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32769
+             Address     0001.C98C.2155
+             Cost        19
+             Port        4(FastEthernet0/4)
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+
+  Bridge ID  Priority    32769  (priority 32768 sys-id-ext 1)
+             Address     0060.70B9.68AB
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
+
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/2            Altn BLK 19        128.2    P2p
+Fa0/4            Root FWD 19        128.4    P2p
+Gi0/1            Desg FWD 4         128.25   P2p
+
+SW3#
+```
+Из приведенного выше листинга команды  **show spanning-tree** видно, что самый меньший MAC-адрес имеет коммутатор SW1 при равных приоритетах. 
+
+|Коммутатор|MAC-адрес|Приоритет|
+|:-------:|:---------:|:--------:|
+|SW1| 0001.C98C.2155|32769|
+|SW2| 0030.F237.0CEE|32769|
+|SW3| 0060.70B9.68AB|32769|
+
+Поэтому коммутатор SW1 был выбран корневым мостом.
+
+
 
 
 
