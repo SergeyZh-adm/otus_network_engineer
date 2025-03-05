@@ -58,16 +58,213 @@ Switch#reload
 
 Проверьте способность хостов обмениваться эхо-запросами.  
 
-* Успешно ли выполняется эхо-запрос от коммутатора S1 на коммутатор S2?  
+* Успешно ли выполняется эхо-запрос от коммутатора S1 на коммутатор S2?
+```
+SW1#
+SW1#ping 192.168.1.2
+
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.1.2, timeout is 2 seconds:
+..!!!
+Success rate is 60 percent (3/5), round-trip min/avg/max = 0/1/3 ms
+
+SW1#
+```  
 Эхо ответ получен.
-* Успешно ли выполняется эхо-запрос от коммутатора S1 на коммутатор S3?  
+* Успешно ли выполняется эхо-запрос от коммутатора S1 на коммутатор S3?
+```
+SW1#
+SW1#ping 192.168.1.3
+
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.1.3, timeout is 2 seconds:
+..!!!
+Success rate is 60 percent (3/5), round-trip min/avg/max = 0/0/0 ms
+
+SW1#
+```
 Эхо ответ получен.
-* Успешно ли выполняется эхо-запрос от коммутатора S2 на коммутатор S3?  
+* Успешно ли выполняется эхо-запрос от коммутатора S2 на коммутатор S3?
+```
+SW2#
+SW2#ping 192.168.1.3
+
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.1.3, timeout is 2 seconds:
+..!!!
+Success rate is 60 percent (3/5), round-trip min/avg/max = 0/0/0 ms
+
+SW2#
+```
 Эхо ответ получен.
-* Успешно ли выполняется эхо-запрос от ПК PC0 на маршрутизатор R0?  
+* Успешно ли выполняется эхо-запрос от ПК PC0 на маршрутизатор R1?
+```
+C:\>
+C:\>ping 192.168.1.254
+
+Pinging 192.168.1.254 with 32 bytes of data:
+
+Reply from 192.168.1.254: bytes=32 time=17ms TTL=255
+Reply from 192.168.1.254: bytes=32 time<1ms TTL=255
+Reply from 192.168.1.254: bytes=32 time<1ms TTL=255
+Reply from 192.168.1.254: bytes=32 time<1ms TTL=255
+
+Ping statistics for 192.168.1.254:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 17ms, Average = 4ms
+
+C:\>
+```
 Эхо ответ получен.
 
 #### 2. Определение корневого моста.
 --------------
+> Для каждого экземпляра протокола spanning-tree (коммутируемая сеть LAN или широковещательный домен) существует коммутатор, выделенный в качестве корневого моста. Корневой мост служит точкой привязки для всех расчётов протокола spanning-tree, позволяя определить избыточные пути, которые следует заблокировать.  
+Процесс выбора определяет, какой из коммутаторов станет корневым мостом. Коммутатор с наименьшим значением идентификатора моста (BID) становится корневым мостом. Идентификатор BID состоит из значения приоритета моста, расширенного идентификатора системы и MAC-адреса коммутатора. Значение приоритета может находиться в диапазоне от 0 до 65535 с шагом 4096. По умолчанию используется значение 32768.
+
+Шаг 1:	Отключим все порты на коммутаторах.
+```
+SW2(config)# 
+SW2(config)#int range fa0/1-24,gig0/1-2
+SW2(config-if-range)#
+SW2(config-if-range)#
+SW2(config-if-range)#switchport mode access
+SW2(config-if-range)#
+SW2(config-if-range)#shutdown 
+
+SW2#sh ip int br
+Interface              IP-Address      OK? Method Status                Protocol 
+FastEthernet0/1        unassigned      YES manual administratively down down 
+FastEthernet0/2        unassigned      YES manual administratively down down 
+FastEthernet0/3        unassigned      YES manual administratively down down 
+FastEthernet0/4        unassigned      YES manual administratively down down 
+FastEthernet0/5        unassigned      YES manual administratively down down 
+FastEthernet0/6        unassigned      YES manual administratively down down 
+FastEthernet0/7        unassigned      YES manual administratively down down 
+FastEthernet0/8        unassigned      YES manual administratively down down 
+FastEthernet0/9        unassigned      YES manual administratively down down 
+FastEthernet0/10       unassigned      YES manual administratively down down 
+FastEthernet0/11       unassigned      YES manual administratively down down 
+FastEthernet0/12       unassigned      YES manual administratively down down 
+FastEthernet0/13       unassigned      YES manual administratively down down 
+FastEthernet0/14       unassigned      YES manual administratively down down 
+FastEthernet0/15       unassigned      YES manual administratively down down 
+FastEthernet0/16       unassigned      YES manual administratively down down 
+FastEthernet0/17       unassigned      YES manual administratively down down 
+FastEthernet0/18       unassigned      YES manual administratively down down 
+FastEthernet0/19       unassigned      YES manual administratively down down 
+FastEthernet0/20       unassigned      YES manual administratively down down 
+FastEthernet0/21       unassigned      YES manual administratively down down 
+FastEthernet0/22       unassigned      YES manual administratively down down 
+FastEthernet0/23       unassigned      YES manual administratively down down 
+FastEthernet0/24       unassigned      YES manual administratively down down 
+GigabitEthernet0/1     unassigned      YES manual administratively down down 
+GigabitEthernet0/2     unassigned      YES manual administratively down down 
+Vlan1                  192.168.1.2     YES manual up                    down
+SW2#
+```
+Аналогично отключим порты на коммутаторах SW1, SW3.
+
+Шаг 2:	Настроим  на коммутаторе SW2 подключенные порты fa0/1-fa0/4 в качестве транковых.
+
+```
+SW2(config)#
+SW2(config)#
+SW2(config)#int range fa0/1-4
+SW2(config-if-range)#
+SW2(config-if-range)#switchport mode trunk 
+SW2(config-if-range)#
+SW2(config-if-range)#switchport trunk native vlan 1
+SW2(config-if-range)#
+SW2(config-if-range)#switchport  nonegotiate 
+SW2(config-if-range)#exit
+SW2(config)#
+```
+
+
+
+Аналогично настроим подключенные порты fa0/1-fa0/4 в качестве транковых на коммутаторах SW1, SW3.
+
+Шаг 3:	Включим порты F0/2 и F0/4 на всех коммутаторах.
+```
+SW2(config)#
+SW2(config)#int range fa0/2,fa0/4,fa0/5
+SW2(config-if-range)#
+SW2(config-if-range)#
+SW2(config-if-range)#no shut
+
+
+
+SW2(config-if-range)#
+%LINK-5-CHANGED: Interface FastEthernet0/2, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/2, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan1, changed state to up
+
+%LINK-5-CHANGED: Interface FastEthernet0/4, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/4, changed state to up
+
+%LINK-5-CHANGED: Interface FastEthernet0/5, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/5, changed state to up
+
+SW2(config-if-range)#exit
+SW2(config)#
+
+
+
+SW2#
+SW2#sh int trunk
+Port        Mode         Encapsulation  Status        Native vlan
+Fa0/2       on           802.1q         trunking      1
+Fa0/4       on           802.1q         trunking      1
+
+Port        Vlans allowed on trunk
+Fa0/2       1-1005
+Fa0/4       1-1005
+
+Port        Vlans allowed and active in management domain
+Fa0/2       1
+Fa0/4       1
+
+Port        Vlans in spanning tree forwarding state and not pruned
+Fa0/2       1
+Fa0/4       1
+
+SW2#
+
+```
+
+Проверим связанность сети после включения портов на всех коммутаторах.
+```
+C:\>
+C:\>ping 192.168.1.254
+
+Pinging 192.168.1.254 with 32 bytes of data:
+
+Reply from 192.168.1.254: bytes=32 time=17ms TTL=255
+Reply from 192.168.1.254: bytes=32 time<1ms TTL=255
+Reply from 192.168.1.254: bytes=32 time<1ms TTL=255
+Reply from 192.168.1.254: bytes=32 time<1ms TTL=255
+
+Ping statistics for 192.168.1.254:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 17ms, Average = 4ms
+
+C:\>
+```
+Маршрутизатор R1 доступен с ПК PC0. Связанность сети имеется.
+
+Топология сети будет иметь следующий вид.
+![](Топология_07_3.PNG)
+
+
+
+
+
 
 
