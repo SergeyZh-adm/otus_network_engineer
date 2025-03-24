@@ -5,10 +5,17 @@
 
 ### Задание.
 -------------
-1. Создание сети и настройка основных параметров устройства
-2. Выбор корневого моста
-3. Наблюдение за процессом выбора протоколом STP порта, исходя из стоимости портов
-4. Наблюдение за процессом выбора протоколом STP порта, исходя из приоритета портов.
+[1. Создание сети и настройка основных параметров устройства](README.md#1-создание-сети-и-настройка-основных-параметров-устройства)
+
+[2. Выбор корневого моста](README.md#2-определение-корневого-моста)
+
+[3. Наблюдение за процессом выбора протоколом STP порта, исходя из стоимости портов](README.md#3наблюдение-за-процессом-выбора-протоколом-stp-порта-исходя-из-стоимости-портов)
+
+[4. Наблюдение за процессом выбора протоколом STP порта, исходя из приоритета портов.](README.md#4наблюдение-за-процессом-выбора-протоколом-stp-порта-исходя-из-приоритета-портов)
+
+[5. Определение граничных портов.](README.md#5-определение-граничных-портов)
+
+[6. Задание и проверка идентификатора моста.](README.md#6-задание-и-проверка-идентификатора-моста)
 
 ### Решение.
 -------------
@@ -617,3 +624,161 @@ SW3#
 ```
 
 Коммутатор SW1  так и остался корневым, поскольку у него самый меньший MAC-адрес при равных приоритетах. Все используемые порты fa0/1-fa0/4 у корневого коммутатора -  Designated
+
+Корневой порт на коммутаторе SW3 переместился на порт fa0/3 с меньшим номером 128.3 и заблокировал предыдущий порт корневого моста fa0/4 с большим номером 128.4
+
+Корневой порт на коммутаторе SW2 переместился на порт fa0/1 с меньшим номером 128.1 и заблокировал предыдущий порт корневого моста fa0/2 с большим номером 128.2
+
+Таким образом протокол STP выбирает корневые порты исходя из наименьшего номера порта.
+
+-------------------------------
+### 5. Определение граничных портов.
+-------------------------------
+
+>На коммутаторах уровня доступа всегда существуют граничные порты, к которым подключается конечное оборудование, которое никогда не является другим коммутатором.
+Что бы эти порты не участвовали в работе протокола STP  и не блокировались, необходимо их перевести в режим граничных портов командой **spanning-tree portfast**.
+
+В нашем случае порт fa0/5 на коммутаторе SW2 и порт gig0/1 на коммутаторе SW3 обозначим как граничные.
+
+```
+SW2(config)#
+SW2(config)#int fa0/5
+SW2(config-if)#
+SW2(config-if)#
+SW2(config-if)#spanning-tree portfast
+%Warning: portfast should only be enabled on ports connected to a single
+host. Connecting hubs, concentrators, switches, bridges, etc... to this
+interface  when portfast is enabled, can cause temporary bridging loops.
+Use with CAUTION
+
+%Portfast has been configured on FastEthernet0/5 but will only
+have effect when the interface is in a non-trunking mode.
+SW2(config-if)#
+```
+
+```
+SW3#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+SW3(config)#int gig0/1
+SW3(config-if)#
+SW3(config-if)#spanning-tree portfast 
+%Warning: portfast should only be enabled on ports connected to a single
+host. Connecting hubs, concentrators, switches, bridges, etc... to this
+interface  when portfast is enabled, can cause temporary bridging loops.
+Use with CAUTION
+
+%Portfast has been configured on GigabitEthernet0/1 but will only
+have effect when the interface is in a non-trunking mode.
+SW3(config-if)#
+SW3(config-if)#exit
+SW3(config)#exit
+```
+-------------
+### 6. Задание и проверка идентификатора моста.
+-------------
+
+Не всегда протокол STP оптимально выбирает корневой мост в конкретной топологии. В нашем случае корневым мостом выбран коммутатор SW1. При этом кадры от PC0 до маршрутизатора R1 будут проходить по пути PC0-SW2-SW1-SW3-R1 и обратно по этому пути.  
+Более короткий путь прохождения кадров - PC0-SW2-SW3-R1. Для этого нужно назначить корневым мостом коммутатор SW3, а коммутатор SW1 назначить резервным корневым мостом на случай аварии основного.  
+Существуют два способа повлиять на  принудительный выбор корневого моста.
+* С помощью команды **spanning-tree vlan x root primary** или **secondary**.
+* Путем изменения значения приоритета спомощью команды **spanning-tree vlan x priority x**.
+
+Назначим root primary коммутатор SW3, а root secondary коммутатор SW1.
+```
+
+SW3#
+SW3#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+SW3(config)#
+SW3(config)#
+SW3(config)#spanning-tree vlan 1 root primary 
+SW3(config)#
+SW3(config)#exit
+SW3#
+%SYS-5-CONFIG_I: Configured from console by console
+
+SW3#
+SW3#sh span
+SW3#sh spanning-tree 
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    24577
+             Address     0060.70B9.68AB
+             This bridge is the root
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+
+  Bridge ID  Priority    24577  (priority 24576 sys-id-ext 1)
+             Address     0060.70B9.68AB
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
+
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/1            Desg FWD 19        128.1    P2p
+Fa0/4            Desg FWD 19        128.4    P2p
+Fa0/2            Desg FWD 19        128.2    P2p
+Fa0/3            Desg FWD 19        128.3    P2p
+Gi0/1            Desg FWD 4         128.25   P2p
+
+SW3#
+```
+```
+SW1(config)#
+SW1(config)#spanning-tree vlan 1 root secondary 
+SW1(config)#
+SW1(config)#
+SW1(config)#exit
+SW1#
+%SYS-5-CONFIG_I: Configured from console by console
+
+SW1#
+SW1#sh spanning-tree 
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    24577
+             Address     0060.70B9.68AB
+             Cost        19
+             Port        3(FastEthernet0/3)
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+
+  Bridge ID  Priority    28673  (priority 28672 sys-id-ext 1)
+             Address     0001.C98C.2155
+             Hello Time  2 sec  Max Age 20 sec  Forward Delay 15 sec
+             Aging Time  20
+
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- --------------------------------
+Fa0/2            Desg FWD 19        128.2    P2p
+Fa0/4            Altn BLK 19        128.4    P2p
+Fa0/3            Root FWD 19        128.3    P2p
+Fa0/1            Desg FWD 19        128.1    P2p
+
+SW1#
+```
+
+Изменились состояния и роли портов на всех коммутаторах. Корневым стал коммутатор SW3.
+
+Путь прохождения кадров от PC0 до R1 стал оптимальным.
+
+![](Топология_07_5.PNG)
+
+---------------
+### Вопросы для повторения
+
+1.	Какое значение протокол STP использует первым после выбора корневого моста, чтобы определить выбор порта?
+
+Протокол STP использует нименьшую стоимость (кротчайшее расстояние) порта до корневого коммутатора.
+Эта стоимость определяется суммой стоимостей всех линков, которые нужно пройти кадру, чтобы дойти до корневого свича. В свою очередь, стоимость линка определяется по его скорости (чем выше скорость, тем меньше стоимость).
+
+2. Если первое значение на двух портах одинаково, какое следующее значение будет использовать протокол STP при выборе порта?
+
+Если стоимости портов равны, процесс сравнивает BID. Если BID равны, используются приоритеты портов.  
+Значение приоритета по умолчанию — 128. STP объединяет приоритет порта с номером порта, чтобы разорвать связи. Наиболее низкие значения являются предпочтительными.
+
+---------------
+
+Пример рабочей конфигурации коммутатора SW1 приведен [здесь](/labs/lab07/configs/config%20SW1_07.txt)
+
+Пример рабочей конфигурации коммутатора SW2 приведен [здесь](/labs/lab07/configs/config%20SW2_07.txt)
+
+Пример рабочей конфигурации коммутатора SW3 приведен [здесь](/labs/lab07/configs/config%20SW3_07.txt)
