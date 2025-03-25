@@ -94,11 +94,148 @@
 -------------------------
 
 
-a.	Активируйте интерфейс G0/0/1 на маршрутизаторе.
+a.	Настройте подинтерфейсы для каждой VLAN в соответствии с требованиями таблицы IP-адресации. Все субинтерфейсы используют инкапсуляцию 802.1Q и назначаются первый полезный адрес из вычисленного пула IP-адресов. Убедитесь, что подинтерфейсу для native VLAN не назначен IP-адрес. 
 
+```
+R1#
+R1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#
+R1(config)#int gig0/0/1.100
+R1(config-subif)#
+R1(config-subif)#encapsulation dot1Q 100
+R1(config-subif)#
+R1(config-subif)#ip address 192.168.1.1 255.255.255.192
+R1(config-subif)#
+R1(config-subif)#int gig0/0/1.200
+R1(config-subif)#encapsulation dot1Q 200
+R1(config-subif)#
+R1(config-subif)#ip address 192.168.1.65 255.255.255.192
+R1(config)#int gig0/0/1.1000
+R1(config-subif)#
+R1(config-subif)#encapsulation dot1Q 1000 native 
+R1(config-subif)#exit
+```
 
-b.	Настройте подинтерфейсы для каждой VLAN в соответствии с требованиями таблицы IP-адресации. Все субинтерфейсы используют инкапсуляцию 802.1Q и назначаются первый полезный адрес из вычисленного пула IP-адресов. Убедитесь, что подинтерфейсу для native VLAN не назначен IP-адрес. Включите описание для каждого подинтерфейса.
+b.	Активируйте интерфейс G0/0/1 на маршрутизаторе.
 
+```
+R1(config)#
+R1(config)#int gig0/0/1
+R1(config-if)#
+R1(config-if)#no shut
 
+R1(config-if)#
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/1, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/1, changed state to up
+
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/1.100, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/1.100, changed state to up
+
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/1.200, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/1.200, changed state to up
+
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/1.1000, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0/1.1000, changed state to up
+
+R1(config-if)#
+
+```
 c.	Убедитесь, что вспомогательные интерфейсы работают.
+
+```
+R1#sh ip int br
+Interface              IP-Address      OK? Method Status                Protocol 
+GigabitEthernet0/0/0   unassigned      YES NVRAM  administratively down down 
+GigabitEthernet0/0/1   unassigned      YES NVRAM  up                    up 
+GigabitEthernet0/0/1.100192.168.1.1     YES manual up                    up 
+GigabitEthernet0/0/1.200192.168.1.65    YES manual up                    up 
+GigabitEthernet0/0/1.1000unassigned      YES unset  up                    up 
+Vlan1                  unassigned      YES unset  administratively down down
+R1#
+```
+--------------
+#### Шаг 5.	Настройте G0/0/1 на R2, затем G0/0/0 и статическую маршрутизацию для обоих маршрутизаторов.
+
+--------------
+
+a.	Настройте G0/0/1 на R2 с первым IP-адресом подсети C, рассчитанным ранее.
+
+```
+R2(config)#
+R2(config)#int gig0/0/1
+R2(config-if)#
+R2(config-if)#
+R2(config-if)#ip address 192.168.1.129 255.255.255.192
+R2(config-if)#
+```
+
+b.	Настройте интерфейс G0/0/0 для каждого маршрутизатора на основе приведенной выше таблицы IP-адресации.
+
+```
+R2(config-if)#
+R2(config-if)#ip address 10.0.0.2 255.255.255.252
+R2(config-if)#
+R2(config-if)#
+R2(config-if)#
+R2(config-if)#no shut
+
+R2(config-if)#
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/0, changed state to up
+
+R2(config-if)#
+```
+
+```
+R1(config)#
+R1(config)#int gig0/0/0
+R1(config-if)#
+R1(config-if)#
+R1(config-if)#ip addr 10.0.0.1 255.255.255.252
+R1(config-if)#
+R1(config-if)#no shut
+R1(config-if)#
+%LINK-5-CHANGED: Interface GigabitEthernet0/0/0, changed state to up
+
+R1(config-if)#
+
+```
+c.	Настройте маршрут по умолчанию на каждом маршрутизаторе, указываемом на IP-адрес G0/0/0 на другом маршрутизаторе.
+
+```
+R1(config)#
+R1(config)#ip route 192.168.1.128 255.255.255.192 10.0.0.2
+R1(config)#
+```
+
+
+```
+R2(config)#
+R2(config)#ip route 192.168.1.0 255.255.255.192 10.0.0.1
+R2(config)#
+R2(config)#
+R2(config)#ip route 192.168.1.64 255.255.255.192 10.0.0.1
+R2(config)#
+R2(config)#
+```
+
+d.	Убедитесь, что статическая маршрутизация работает с помощью пинга до адреса G0/0/1 R2 от R1.
+
+```
+R1#
+R1#ping 192.168.1.129
+
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.1.129, timeout is 2 seconds:
+.!!!!
+Success rate is 80 percent (4/5), round-trip min/avg/max = 0/0/0 ms
+R1#
+```
+
+e.	Сохраните текущую конфигурацию в файл загрузочной конфигурации.
+
 
