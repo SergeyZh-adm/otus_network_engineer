@@ -239,4 +239,235 @@ R1#
 
 e.	Сохраните текущую конфигурацию в файл загрузочной конфигурации.
 
+---------------
+#### Шаг 6.	Создайте сети VLAN на коммутаторе S1.
+--------------------
+
+a.	Создайте необходимые VLAN на коммутаторе 1 и присвойте им имена из приведенной выше таблицы.
+```
+SW1(config)#
+SW1(config)#
+SW1(config)#vlan 100
+SW1(config-vlan)#
+SW1(config-vlan)#name Clients
+SW1(config-vlan)#
+SW1(config-vlan)#
+SW1(config-vlan)#exit
+SW1(config)#vlan 200
+SW1(config-vlan)#
+SW1(config-vlan)#name Control
+SW1(config-vlan)#
+SW1(config-vlan)#exit
+SW1(config)#vlan 999
+SW1(config-vlan)#
+SW1(config-vlan)#
+SW1(config-vlan)#name Parking_Lot
+SW1(config-vlan)#
+SW1(config-vlan)#
+SW1(config-vlan)#exit
+SW1(config)#vlan 1000
+SW1(config-vlan)#
+SW1(config-vlan)#name Native
+SW1(config-vlan)#
+SW1(config-vlan)#exit
+SW1(config)#
+```
+b.	Настройте и активируйте интерфейс управления на S1 (VLAN 200), используя второй IP-адрес из подсети, рассчитанный ранее. Кроме того установите шлюз по умолчанию на S1.
+
+```
+SW1(config)#
+SW1(config)#int vlan 200
+SW1(config-if)#
+%LINK-5-CHANGED: Interface Vlan200, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan200, changed state to up
+
+SW1(config-if)#
+SW1(config-if)#
+SW1(config-if)#ip address 192.168.1.66 255.255.255.192
+SW1(config-if)#
+```
+
+
+
+
+c.	Настройте и активируйте интерфейс управления на S2 (VLAN 1), используя второй IP-адрес из подсети, рассчитанный ранее. Кроме того, установите шлюз по умолчанию на S2
+
+```
+SW2(config-if)#ip address 192.168.1.130 255.255.255.192
+SW2(config-if)#
+SW2(config-if)#
+SW2(config-if)#no shut
+
+SW2(config-if)#
+%LINK-5-CHANGED: Interface Vlan1, changed state to up
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan1, changed state to up
+
+SW2(config-if)#
+SW2(config-if)#
+SW2(config-if)#
+SW2(config-if)#exit
+SW2(config)#
+SW2(config)#ip default-gateway 192.168.1.129
+SW2(config)#
+```
+
+
+d.	Назначьте все неиспользуемые порты S1 VLAN Parking_Lot, настройте их для статического режима доступа и административно деактивируйте их. На S2 административно деактивируйте все неиспользуемые порты.
+
+```
+SW1(config)#int range fa0/1-4,fa0/8-24,gig0/1-2
+SW1(config-if-range)#
+SW1(config-if-range)#switchport mode access 
+SW1(config-if-range)#
+SW1(config-if-range)#switchport access vlan 999
+SW1(config-if-range)#switchport nonegotiate 
+SW1(config-if-range)#
+SW1(config-if-range)#
+SW1(config-if-range)#shut
+```
+
+```
+SW2#
+SW2#conf t 
+Enter configuration commands, one per line.  End with CNTL/Z.
+SW2(config)#int range fa0/1-4,fa0/6-17,fa0/19-24,gig0/1-2
+SW2(config-if-range)#swit
+SW2(config-if-range)#switchport mode acc
+SW2(config-if-range)#switchport mode access 
+SW2(config-if-range)#
+SW2(config-if-range)#
+SW2(config-if-range)#shut
+```
+
+-------
+Шаг 8.	Назначьте сети VLAN соответствующим интерфейсам коммутатора.
+
+-------
+```
+
+SW1(config)#
+SW1(config)#int range fa0/6
+SW1(config-if-range)#
+SW1(config-if-range)#switchport mode access 
+SW1(config-if-range)#swi
+SW1(config-if-range)#switchport access vlan 100
+SW1(config-if-range)#
+SW1(config-if-range)#
+SW1(config-if-range)#exit
+SW1(config)#int range fa0/7
+SW1(config-if-range)#switchport mode access 
+SW1(config-if-range)#switchport access vlan 200
+SW1(config-if-range)#
+SW1(config-if-range)#
+```
+----------
+Шаг 9.	Вручную настройте интерфейс S1 F0/5 в качестве транка 802.1Q.
+
+----------------
+
+
+a.	Измените режим порта коммутатора, чтобы принудительно создать магистральный канал.
+
+```
+SW1(config)#int fa0/5
+SW1(config-if)#
+SW1(config-if)#switchport mode trunk
+
+SW1(config-if)#
+%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/5, changed state to down
+
+%LINEPROTO-5-UPDOWN: Line protocol on Interface FastEthernet0/5, changed state to up
+
+SW1(config-if)#no shut
+
+
+```
+
+b.	В рамках конфигурации транка  установите для native  VLAN значение 1000.
+
+```
+SW1(config-if)#
+SW1(config-if)#switchport trunk native vlan 1000
+SW1(config-if)#
+SW1(config-if)#
+SW1(config-if)#switchport  nonegotiate
+SW1(config-if)#
+SW1(config-if)#
+SW1(config-if)#exit
+SW1(config)#
+```
+
+c.	В качестве другой части конфигурации магистрали укажите, что VLAN 100, 200 и 1000 могут проходить по транку.
+
+```
+SW1(config)#int fa0/5
+SW1(config-if)#
+SW1(config-if)#
+SW1(config-if)#switchport trunk allowed vlan 100,200,1000
+SW1(config-if)#
+SW1(config-if)#
+SW1(config-if)#
+```
+
+e.	Проверьте состояние транка и VLAN.
+
+Состояние транка
+
+```
+SW1#
+SW1#sh trunk
+        ^
+% Invalid input detected at '^' marker.
+	
+SW1#sh ip trunk
+          ^
+% Invalid input detected at '^' marker.
+	
+SW1#sh int trunk
+Port        Mode         Encapsulation  Status        Native vlan
+Fa0/5       on           802.1q         trunking      1000
+
+Port        Vlans allowed on trunk
+Fa0/5       100,200,1000
+
+Port        Vlans allowed and active in management domain
+Fa0/5       100,200,1000
+
+Port        Vlans in spanning tree forwarding state and not pruned
+Fa0/5       100,200,1000
+
+SW1#
+```
+
+Состояние VLAN
+
+```
+SW1#sh vlan
+
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    
+100  Clients                          active    Fa0/6
+200  Control                          active    Fa0/7
+999  Parking_Lot                      active    Fa0/1, Fa0/2, Fa0/3, Fa0/4
+                                                Fa0/8, Fa0/9, Fa0/10, Fa0/11
+                                                Fa0/12, Fa0/13, Fa0/14, Fa0/15
+                                                Fa0/16, Fa0/17, Fa0/18, Fa0/19
+                                                Fa0/20, Fa0/21, Fa0/22, Fa0/23
+                                                Fa0/24, Gig0/1, Gig0/2
+1000 Native                           active    
+1002 fddi-default                     active    
+1003 token-ring-default               active    
+1004 fddinet-default                  active    
+1005 trnet-default                    active    
+```
+
+
+Вопрос:
+Какой IP-адрес был бы у ПК, если бы он был подключен к сети с помощью DHCP?
+
+В данном случае в сети нет сервера DHCP, поэтому ПК получил бы адрес из диапазона 169.254.0.0-169.254.255.255.
+
 
