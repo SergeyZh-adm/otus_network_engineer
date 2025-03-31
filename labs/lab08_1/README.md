@@ -487,23 +487,150 @@ FastEthernet0 Connection:(default port)
 
 #### Шаг 2. Настройте R2 в качестве агента DHCP-ретрансляции для локальной сети на G0/0/1.
 a.	Настройте команду **ipv6 dhcp relay** на интерфейсе R2 G0/0/1, указав адрес назначения интерфейса G0/0/0 на R1. Также настройте команду **managed-config-flag**.
-
-
-
-
-R2 (конфигурация) # интерфейс g0/0/1
+```
+R2(config) # int gig0/0/1
 R2(config-if)# ipv6 nd managed-config-flag
 R2(config-if)# ipv6 dhcp relay destination 2001:db8:acad:2::1 g0/0/0
+```
+
+На реальном оборудовании, после проведенных настроек, роутер R2 выполнял бы роль ретранслятора  DHCP Сервера с сохранением состояния на маршрутизаторе R1. Данная версия CPT не позволяет настроить DHCP  ретрансляциюю.  
+ Перенастроим схему таким образом, что бы роль DHCP  сервера с сохранением состояния выполнял маршрутизатор R2 для сети подключенной к интерфейсу gig0/0/1 маршрутизатора R2
+
+------
+### 6. Настройка сервера DHCPv6 с сохранением состояния на R2.
+---------------
+
+a.	Создайте пул DHCPv6 на R2 для сети 2001:db8:acad:3:aaa::/80. Это предоставит адреса локальной сети, подключенной к интерфейсу G0/0/1 на R2.  
+
+
+В составе пула задайте DNS-сервер 2001:db8:acad: :254 и задайте доменное имя STATEFUL.com.
 
 
 
+```
+R2(config)#
+R2(config)#ipv6 dhcp pool R2-STATEFUL
+R2(config-dhcpv6)#
+R2(config-dhcpv6)#address prefix 2001:db8:acad:3:aaa::/80
+R2(config-dhcpv6)#
+R2(config-dhcpv6)#dns-server 2001:db8:acad::254
+R2(config-dhcpv6)#
+R2(config-dhcpv6)#domain-name STATEFUL.com
+R2(config-dhcpv6)#
+R2(config-dhcpv6)#exit
+R2(config)#
+R2(config)#exit
+R2#
+%SYS-5-CONFIG_I: Configured from console by console
+
+R2#
+R2#sh ipv6 dhcp pool
+DHCPv6 pool: R2-STATEFUL
+  Address allocation prefix: 2001:db8:acad:3:aaa::/80 valid 172800 preferred 86400 (0 in use, 0 conflicts)
+  DNS server: 2001:DB8:ACAD::254
+  Domain name: STATEFUL.com
+  Active clients: 0
+```
+
+b.	Назначьте только что созданный пул DHCPv6 интерфейсу g0/0/1 на R2.
+
+```
+R2(config)#
+R2(config)#int gig0/0/1
+R2(config-if)#
+R2(config-if)#ipv6 dhcp server R2-STATEFUL
+R2(config-if)#
+
+R2(config-if)#ipv6 nd ?
+  managed-config-flag  Hosts should use DHCP for address config
+  other-config-flag    Other stateful configuration flag
+  ra                   Router Advertisement control
+R2(config-if)#ipv6 nd managed-config-flag
+R2(config-if)#
+R2(config-if)#exit
+R2(config)#
+R2(config)#exit
+R2#
+R2#sh ipv6 dhcp pool
+DHCPv6 pool: R2-STATEFUL
+  Address allocation prefix: 2001:db8:acad:3:aaa::/80 valid 172800 preferred 86400 (8 in use, 0 conflicts)
+  DNS server: 2001:DB8:ACAD::254
+  Domain name: STATEFUL.com
+  Active clients: 1
+R2#
+R2#sh ipv6 dhcp binding 
+Client: FE80::201:43FF:FE25:BEE8
+  DUID: 0001000188A8DDBB00014325BEE8
+  IA NA: IA ID 1234357757, T1 0, T2 0
+    Address: 2001:DB8:ACAD:3:AAA:33FF:EE04:A6AC
+            preferred lifetime 86400, valid lifetime 172800
+            expires at April 2 2025 10:6:21 pm (172800 seconds)
+R2#
+```
+
+Появился 1 активный DHCP клиент. Это ПК PC-B.
+
+c. Откройте командную строку на PC-B, выполните команду **ipconfig /all** и проверьте выходные данные.
+```
+C:\>ipconfig /all
+
+FastEthernet0 Connection:(default port)
+
+   Connection-specific DNS Suffix..: STATEFUL.com 
+   Physical Address................: 0001.4325.BEE8
+   Link-local IPv6 Address.........: FE80::201:43FF:FE25:BEE8
+   IPv6 Address....................: 2001:DB8:ACAD:3:AAA:33FF:EE04:A6AC
+   IPv4 Address....................: 0.0.0.0
+   Subnet Mask.....................: 0.0.0.0
+   Default Gateway.................: FE80::1
+                                     0.0.0.0
+   DHCP Servers....................: 0.0.0.0
+   DHCPv6 IAID.....................: 1234357757
+   DHCPv6 Client DUID..............: 00-01-00-01-88-A8-DD-BB-00-01-43-25-BE-E8
+   DNS Servers.....................: 2001:DB8:ACAD::254
+                                     0.0.0.0
+
+```
+
+Как видно, ПК PC-B получил от сервера DHCP (R2): 
+* ipv6 адрес с префиксом 2001:DB8:ACAD:3:AAA::
+* DNS Suffix - STATEFUL.com 
+* DNS Servers - 2001:DB8:ACAD::254
+
+d.	Проверьте подключение с помощью пинга IP-адреса интерфейса R0 G0/0/1 и IP адреса PC-A
+  ```
+  C:\>
+C:\>ping fe80::1
+
+Pinging fe80::1 with 32 bytes of data:
+
+Reply from FE80::1: bytes=32 time<1ms TTL=255
+Reply from FE80::1: bytes=32 time<1ms TTL=255
+Reply from FE80::1: bytes=32 time<1ms TTL=255
+Reply from FE80::1: bytes=32 time<1ms TTL=255
+
+Ping statistics for FE80::1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>
+C:\>
+C:\>ping 2001:db8:acad:3::1
+
+Pinging 2001:db8:acad:3::1 with 32 bytes of data:
+
+Reply from 2001:DB8:ACAD:3::1: bytes=32 time<1ms TTL=255
+Reply from 2001:DB8:ACAD:3::1: bytes=32 time<1ms TTL=255
+Reply from 2001:DB8:ACAD:3::1: bytes=32 time<1ms TTL=255
+Reply from 2001:DB8:ACAD:3::1: bytes=32 time<1ms TTL=255
+
+Ping statistics for 2001:DB8:ACAD:3::1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+```
 
 
 
-
-
-
-
-
-
-
+  Настройка 
