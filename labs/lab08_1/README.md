@@ -408,14 +408,92 @@ a.	Создайте пул DHCPv6 на R1 для сети 2001:db8:acad:3:aaa::/
 
 
 В составе пула задайте DNS-сервер 2001:db8:acad: :254 и задайте доменное имя STATEFUL.com.
-Откройте окно конфигурации
-R1(config)# ipv6 dhcp pool R2-STATEFUL
-R1(config-dhcp)# address prefix 2001:db8:acad:3:aaa::/80
-R1(config-dhcp)# dns-server 2001:db8:acad::254
-R1(config-dhcp)# domain-name STATEFUL.com
+
+```
+R1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#
+R1(config)#
+R1(config)#ipv6 dhcp pool R2-STATEFUL
+R1(config-dhcpv6)#
+R1(config-dhcpv6)#
+R1(config-dhcpv6)#address prefix 2001:db8:acad:3:aaa::/80
+R1(config-dhcpv6)#
+R1(config-dhcpv6)#dns-server 2001:db8:acad::254
+R1(config-dhcpv6)#
+R1(config-dhcpv6)#
+R1(config-dhcpv6)#domain-name STATEFUL.com
+R1(config-dhcpv6)#
+R1(config-dhcpv6)#
+R1(config-dhcpv6)#exit
+R1(config)#exit
+R1#
+%SYS-5-CONFIG_I: Configured from console by console
+
+R1#sh ipv6 dhcp pool
+DHCPv6 pool: R1-STATELESS
+  DNS server: 2001:DB8:ACAD::254
+  Domain name: STATELESS.com
+  Active clients: 0
+DHCPv6 pool: R2-STATEFUL
+  Address allocation prefix: 2001:db8:acad:3:aaa::/80 valid 172800 preferred 86400 (0 in use, 0 conflicts)
+  DNS server: 2001:DB8:ACAD::254
+  Domain name: STATEFUL.com
+  Active clients: 0
+R1#
+```
 b.	Назначьте только что созданный пул DHCPv6 интерфейсу g0/0/0 на R1.
-R1(config)# interface g0/0/0
-R1(config-if)# ipv6 dhcp server R2-STATEFUL
+```
+R1(config)#
+R1(config)#int gig0/0/0
+R1(config-if)#
+R1(config-if)#
+R1(config-if)#ipv6 dhcp server R2-STATEFUL
+R1(config-if)#
+R1(config-if)#
+R1(config-if)#exit
+R1(config)#
+```
+-----------------
+### 5. Настройка и проверка ретрансляции DHCPv6 на R2.
+
+---------------
+>В части 5 необходимо настроить и проверить ретрансляцию DHCPv6 на R2, позволяя PC-B получать адрес IPv6.
+
+#### Шаг 1. Включите PC-B и проверьте адрес SLAAC, который он генерирует.
+
+```
+C:\>ipconfig /all
+
+FastEthernet0 Connection:(default port)
+
+   Connection-specific DNS Suffix..: 
+   Physical Address................: 0001.4325.BEE8
+   Link-local IPv6 Address.........: FE80::201:43FF:FE25:BEE8
+   IPv6 Address....................: 2001:DB8:ACAD:3:201:43FF:FE25:BEE8
+   IPv4 Address....................: 0.0.0.0
+   Subnet Mask.....................: 0.0.0.0
+   Default Gateway.................: FE80::1
+                                     0.0.0.0
+   DHCP Servers....................: 0.0.0.0
+   DHCPv6 IAID.....................: 
+   DHCPv6 Client DUID..............: 00-01-00-01-88-A8-DD-BB-00-01-43-25-BE-E8
+   DNS Servers.....................: ::
+                                     0.0.0.0
+```
+
+В адресе SLAAC используется префикс 2001:db8:acad:3::
+
+
+#### Шаг 2. Настройте R2 в качестве агента DHCP-ретрансляции для локальной сети на G0/0/1.
+a.	Настройте команду **ipv6 dhcp relay** на интерфейсе R2 G0/0/1, указав адрес назначения интерфейса G0/0/0 на R1. Также настройте команду **managed-config-flag**.
+
+
+
+
+R2 (конфигурация) # интерфейс g0/0/1
+R2(config-if)# ipv6 nd managed-config-flag
+R2(config-if)# ipv6 dhcp relay destination 2001:db8:acad:2::1 g0/0/0
 
 
 
