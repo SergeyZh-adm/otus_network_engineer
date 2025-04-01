@@ -367,7 +367,7 @@ FastEthernet0 Connection:(default port)
    Default Gateway.................: FE80::1
                                      0.0.0.0
    DHCP Servers....................: 0.0.0.0
-   DHCPv6 IAID.....................: 516992748
+   DHCPv6 IAID.....................: 942670076
    DHCPv6 Client DUID..............: 00-01-00-01-C6-D6-CB-B0-00-D0-BA-48-43-98
    DNS Servers.....................: 2001:DB8:ACAD::254
                                      0.0.0.0
@@ -553,18 +553,18 @@ R2(config)#exit
 R2#
 R2#sh ipv6 dhcp pool
 DHCPv6 pool: R2-STATEFUL
-  Address allocation prefix: 2001:db8:acad:3:aaa::/80 valid 172800 preferred 86400 (8 in use, 0 conflicts)
+  Address allocation prefix: 2001:db8:acad:3:aaa::/80 valid 172800 preferred 86400 (88 in use, 0 conflicts)
   DNS server: 2001:DB8:ACAD::254
   Domain name: STATEFUL.com
   Active clients: 1
 R2#
-R2#sh ipv6 dhcp binding 
+R2#sh ipv6 dhcp bin
 Client: FE80::201:43FF:FE25:BEE8
   DUID: 0001000188A8DDBB00014325BEE8
   IA NA: IA ID 1234357757, T1 0, T2 0
-    Address: 2001:DB8:ACAD:3:AAA:33FF:EE04:A6AC
+    Address: 2001:DB8:ACAD:3:AAA:E97D:CD49:BFB7
             preferred lifetime 86400, valid lifetime 172800
-            expires at April 2 2025 10:6:21 pm (172800 seconds)
+            expires at April 3 2025 11:39:31 am (172800 seconds)
 R2#
 ```
 
@@ -579,7 +579,7 @@ FastEthernet0 Connection:(default port)
    Connection-specific DNS Suffix..: STATEFUL.com 
    Physical Address................: 0001.4325.BEE8
    Link-local IPv6 Address.........: FE80::201:43FF:FE25:BEE8
-   IPv6 Address....................: 2001:DB8:ACAD:3:AAA:33FF:EE04:A6AC
+   IPv6 Address....................: 2001:DB8:ACAD:3:AAA:E97D:CD49:BFB7
    IPv4 Address....................: 0.0.0.0
    Subnet Mask.....................: 0.0.0.0
    Default Gateway.................: FE80::1
@@ -589,7 +589,6 @@ FastEthernet0 Connection:(default port)
    DHCPv6 Client DUID..............: 00-01-00-01-88-A8-DD-BB-00-01-43-25-BE-E8
    DNS Servers.....................: 2001:DB8:ACAD::254
                                      0.0.0.0
-
 ```
 
 Как видно, ПК PC-B получил от сервера DHCP (R2): 
@@ -629,8 +628,27 @@ Ping statistics for 2001:DB8:ACAD:3::1:
     Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
 Approximate round trip times in milli-seconds:
     Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+
+C:\>ping 2001:DB8:ACAD:1:2D0:BAFF:FE48:4398
+
+Pinging 2001:DB8:ACAD:1:2D0:BAFF:FE48:4398 with 32 bytes of data:
+
+Reply from 2001:DB8:ACAD:1:2D0:BAFF:FE48:4398: bytes=32 time=1ms TTL=126
+Reply from 2001:DB8:ACAD:1:2D0:BAFF:FE48:4398: bytes=32 time<1ms TTL=126
+Reply from 2001:DB8:ACAD:1:2D0:BAFF:FE48:4398: bytes=32 time<1ms TTL=126
+Reply from 2001:DB8:ACAD:1:2D0:BAFF:FE48:4398: bytes=32 time<1ms TTL=126
+
+Ping statistics for 2001:DB8:ACAD:1:2D0:BAFF:FE48:4398:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 1ms, Average = 0ms
+
+C:\>
 ```
 
 
 
-  Настройка 
+  Настройка выполнена успешно.
+
+  
