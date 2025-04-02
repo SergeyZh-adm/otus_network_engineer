@@ -621,10 +621,122 @@ b.	На S1 включите защиту порта на F0 / 6 со следу�
 * Максимальное количество записей MAC-адресов: 3
 * Режим безопасности: restrict
 * Aging time: 60 мин.
-* Aging type: неактивный
+* Aging type: неактивный - настройка недоступна в CPT данной версии.
+
+```
+SW1(config)#
+SW1(config)#
+SW1(config)#int fa0/6
+SW1(config-if)#
+SW1(config-if)#switchport port-security
+SW1(config-if)#
+SW1(config-if)#switchport  port-security maximum 3
+SW1(config-if)#
+SW1(config-if)#switchport  port-security ?
+  aging        Port-security aging commands
+  mac-address  Secure mac address
+  maximum      Max secure addresses
+  violation    Security violation mode
+  <cr>
+SW1(config-if)#switchport  port-security violation restrict 
+SW1(config-if)#
+SW1(config-if)#switchport  port-security aging time 60
+SW1(config-if)#
 
 
 
+SW1#
+SW1#show port-security interface f0/6
+Port Security              : Enabled
+Port Status                : Secure-up
+Violation Mode             : Restrict
+Aging Time                 : 60 mins
+Aging Type                 : Absolute
+SecureStatic Address Aging : Disabled
+Maximum MAC Addresses      : 3
+Total MAC Addresses        : 0
+Configured MAC Addresses   : 0
+Sticky MAC Addresses       : 0
+Last Source Address:Vlan   : 0000.0000.0000:0
+Security Violation Count   : 0
 
+SW1#
+
+SW1#show port-security address
+               Secure Mac Address Table
+-----------------------------------------------------------------------------
+Vlan    Mac Address       Type                          Ports   Remaining Age
+                                                                   (mins)
+----    -----------       ----                          -----   -------------
+10	00D0.BCA4.121B	DynamicConfigured	FastEthernet0/6		-
+-----------------------------------------------------------------------------
+Total Addresses in System (excluding one mac per port)     : 0
+Max Addresses limit in System (excluding one mac per port) : 1024
+SW1#
+```
+c.	Включите безопасность порта для F0 / 18 на S2. Настройте каждый активный порт доступа таким образом, чтобы он автоматически добавлял адреса МАС, изученные на этом порту, в текущую конфигурацию.
+
+
+e.	Настройте следующие параметры безопасности порта на S2 F / 18:
+
+* Максимальное количество записей MAC-адресов: 2
+* Тип безопасности: Protect
+* Aging time: 60 мин.
+
+```
+SW2(config)#
+SW2(config)#int fa0/18
+SW2(config-if)#
+SW2(config-if)#switchport port-security
+SW2(config-if)#
+SW2(config-if)#switchport  port-security maximum 2
+SW2(config-if)#
+SW2(config-if)#switchport  port-security violation protect 
+SW2(config-if)#
+SW2(config-if)#switchport  port-security aging time 60
+SW2(config-if)#
+SW2(config-if)#
+SW2(config-if)#do show port-security interface f0/18
+Port Security              : Enabled
+Port Status                : Secure-up
+Violation Mode             : Protect
+Aging Time                 : 60 mins
+Aging Type                 : Absolute
+SecureStatic Address Aging : Disabled
+Maximum MAC Addresses      : 2
+Total MAC Addresses        : 0
+Configured MAC Addresses   : 0
+Sticky MAC Addresses       : 0
+Last Source Address:Vlan   : 0000.0000.0000:0
+Security Violation Count   : 0
+
+SW2(config-if)#exit
+SW2(config)#
+
+SW2#show port-security address
+               Secure Mac Address Table
+-----------------------------------------------------------------------------
+Vlan    Mac Address       Type                          Ports   Remaining Age
+                                                                   (mins)
+----    -----------       ----                          -----   -------------
+10	0007.EC07.8CA9	DynamicConfigured	FastEthernet0/18		-
+-----------------------------------------------------------------------------
+Total Addresses in System (excluding one mac per port)     : 0
+Max Addresses limit in System (excluding one mac per port) : 1024
+SW2#
+```
+--------
+
+#### Шаг 5. Реализовать безопасность DHCP snooping.
+
+------------------
+a.	На S2 включите DHCP snooping и настройте DHCP snooping во VLAN 10.
+
+
+b.	Настройте магистральные порты на S2 как доверенные порты.
+
+c.	Ограничьте ненадежный порт Fa0/18 на S2 пятью DHCP-пакетами в секунду.
+
+d.	Проверка DHCP Snooping на S2.
 
 
