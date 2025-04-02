@@ -589,6 +589,40 @@ SW2#
 
 a.	На S1, введите команду **show port-security interface f0/6**  для отображения настроек по умолчанию безопасности порта для интерфейса F0/6. Запишите свои ответы ниже.
 
+```
+SW1#show port-security interface fa0/6
+Port Security              : Disabled
+Port Status                : Secure-down
+Violation Mode             : Shutdown
+Aging Time                 : 0 mins
+Aging Type                 : Absolute
+SecureStatic Address Aging : Disabled
+Maximum MAC Addresses      : 1
+Total MAC Addresses        : 0
+Configured MAC Addresses   : 0
+Sticky MAC Addresses       : 0
+Last Source Address:Vlan   : 0000.0000.0000:0
+Security Violation Count   : 0
+SW1#
+```
+Конфигурация безопасности порта по умолчанию.
+
+|Функция|Настройка|
+|:----|:--------:|
+|Защита портов|  Disabled   |   
+|Макс. кол-во записей MAC адресов| 1 |
+| Режим проверки на нарушение безопасности| Shutdown |
+| Aging Time|  0 mins |
+|Aging Type| Absolute |
+|Secure Static Address Aging| Disabled |
+|Sticky MAC Address| 0 |
+
+b.	На S1 включите защиту порта на F0 / 6 со следующими настройками:
+* Максимальное количество записей MAC-адресов: 3
+* Режим безопасности: restrict
+* Aging time: 60 мин.
+* Aging type: неактивный
+
 
 
 
