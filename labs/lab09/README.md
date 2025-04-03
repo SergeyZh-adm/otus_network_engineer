@@ -7,20 +7,19 @@
 ### Задание.
 
 -------
-
-### Часть 1. Настройка основного сетевого устройства.
+ [Часть 1. Настройка основного сетевого устройства.](README.md#часть-1-настройка-основного-сетевого-устройства)
 
 * Создайте сеть.
 * Настройте маршрутизатор R1.
 * Настройка и проверка основных параметров коммутатора.
 
-### Часть 2. Настройка сетей VLAN
+[Часть 2. Настройка сетей VLAN.](README.md#2-настройка-сетей-vlan-на-коммутаторах)
 * Сконфигруриуйте VLAN 10.
 * Сконфигруриуйте SVI для VLAN 10.
 * Настройте VLAN 333 с именем Native на S1 и S2.
 * Настройте VLAN 999 с именем ParkingLot на S1 и S2.
 
-### Часть 3: Настройки безопасности коммутатора.
+[Часть 3: Настройки безопасности коммутатора.](README.md#3-настройки-безопасности-коммутатора)
 * Реализация магистральных соединений 802.1Q.
 * Настройка портов доступа
 * Безопасность неиспользуемых портов коммутатора
@@ -695,8 +694,10 @@ SW2(config-if)#switchport  port-security violation protect
 SW2(config-if)#
 SW2(config-if)#switchport  port-security aging time 60
 SW2(config-if)#
+SW2(config-if)#switchport port-security mac-address sticky
 SW2(config-if)#
 SW2(config-if)#do show port-security interface f0/18
+
 Port Security              : Enabled
 Port Status                : Secure-up
 Violation Mode             : Protect
@@ -704,22 +705,20 @@ Aging Time                 : 60 mins
 Aging Type                 : Absolute
 SecureStatic Address Aging : Disabled
 Maximum MAC Addresses      : 2
-Total MAC Addresses        : 0
+Total MAC Addresses        : 1
 Configured MAC Addresses   : 0
-Sticky MAC Addresses       : 0
-Last Source Address:Vlan   : 0000.0000.0000:0
+Sticky MAC Addresses       : 1
+Last Source Address:Vlan   : 0007.EC07.8CA9:10
 Security Violation Count   : 0
 
-SW2(config-if)#exit
-SW2(config)#
-
+SW2#
 SW2#show port-security address
                Secure Mac Address Table
 -----------------------------------------------------------------------------
 Vlan    Mac Address       Type                          Ports   Remaining Age
                                                                    (mins)
 ----    -----------       ----                          -----   -------------
-10	0007.EC07.8CA9	DynamicConfigured	FastEthernet0/18		-
+  10    0007.EC07.8CA9    SecureSticky                  Fa0/18       -
 -----------------------------------------------------------------------------
 Total Addresses in System (excluding one mac per port)     : 0
 Max Addresses limit in System (excluding one mac per port) : 1024
@@ -732,11 +731,338 @@ SW2#
 ------------------
 a.	На S2 включите DHCP snooping и настройте DHCP snooping во VLAN 10.
 
+```
+SW2(config)#
+SW2(config)#
+SW2(config)#ip dhcp snooping
+SW2(config)#
+SW2(config)#ip dhcp snooping vlan 10
+SW2(config)#
+SW2(config)#no ip dhcp snooping information option 
+SW2(config)#
+```
 
 b.	Настройте магистральные порты на S2 как доверенные порты.
 
+```
+SW2(config)#
+SW2(config)#int fa0/1
+SW2(config-if)#
+SW2(config-if)#ip dhcp snooping trust
+SW2(config-if)#
+SW2(config-if)#exit
+SW2(config)#exit
+SW2#
+%SYS-5-CONFIG_I: Configured from console by console
+
+SW2#
+SW2#sh ip dhcp snooping 
+Switch DHCP snooping is enabled
+DHCP snooping is configured on following VLANs:
+10
+Insertion of option 82 is disabled
+Option 82 on untrusted port is not allowed
+Verification of hwaddr field is enabled
+Interface                  Trusted    Rate limit (pps)
+-----------------------    -------    ----------------
+FastEthernet0/1            yes        unlimited       
+FastEthernet0/18           no         unlimited       
+SW2#
+```
+
 c.	Ограничьте ненадежный порт Fa0/18 на S2 пятью DHCP-пакетами в секунду.
 
+```
+SW2(config)#int fa0/18
+SW2(config-if)#
+SW2(config-if)#
+SW2(config-if)#ip dhcp snooping limit rate 5
+SW2(config-if)#
+```
+
+
 d.	Проверка DHCP Snooping на S2.
+```
+SW2#
+SW2#sh ip dhcp snooping 
+Switch DHCP snooping is enabled
+DHCP snooping is configured on following VLANs:
+10
+Insertion of option 82 is disabled
+Option 82 on untrusted port is not allowed
+Verification of hwaddr field is enabled
+Interface                  Trusted    Rate limit (pps)
+-----------------------    -------    ----------------
+FastEthernet0/1            yes        unlimited       
+FastEthernet0/18           no         5               
+
+
+SW2#
+SW2#sh ip dhcp snooping bin
+SW2#sh ip dhcp snooping binding 
+MacAddress          IpAddress        Lease(sec)  Type           VLAN  Interface
+------------------  ---------------  ----------  -------------  ----  -----------------
+00:07:EC:07:8C:A9   192.168.10.11    0           dhcp-snooping  10    FastEthernet0/18
+Total number of bindings: 1
+SW2#
+```
+e.	В командной строке на PC-B освободите, а затем обновите IP-адрес.
+```
+C:\>ipconfig /release
+
+   IP Address......................: 0.0.0.0
+   Subnet Mask.....................: 0.0.0.0
+   Default Gateway.................: 0.0.0.0
+   DNS Server......................: 0.0.0.0
+
+C:\>ipconfig /renew
+
+   IP Address......................: 192.168.10.11
+   Subnet Mask.....................: 255.255.255.0
+   Default Gateway.................: 192.168.10.1
+   DNS Server......................: 0.0.0.0
+
+C:\>
+```
+--------------
+#### Шаг 6. Реализация PortFast и BPDU Guard
+--------------
+
+a.	Настройте PortFast на всех портах доступа, которые используются на обоих коммутаторах и включите защиту BPDU на портах доступа VLAN 10 S1 и S2, подключенных к PC-A и PC-B.
+
+```
+SW2#
+SW2#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+SW2(config)#
+SW2(config)#int fa0/18
+SW2(config-if)#
+SW2(config-if)#spanning-tree portfast 
+%Warning: portfast should only be enabled on ports connected to a single
+host. Connecting hubs, concentrators, switches, bridges, etc... to this
+interface  when portfast is enabled, can cause temporary bridging loops.
+Use with CAUTION
+
+%Portfast has been configured on FastEthernet0/18 but will only
+have effect when the interface is in a non-trunking mode.
+SW2(config-if)#spanning-tree bpduguard enable 
+SW2(config-if)#
+SW2(config-if)#
+```
+```
+SW1(config)#
+SW1(config)#int fa0/6
+SW1(config-if)#
+SW1(config-if)#spanning-tree portfast
+%Warning: portfast should only be enabled on ports connected to a single
+host. Connecting hubs, concentrators, switches, bridges, etc... to this
+interface  when portfast is enabled, can cause temporary bridging loops.
+Use with CAUTION
+
+%Portfast has been configured on FastEthernet0/6 but will only
+have effect when the interface is in a non-trunking mode.
+SW1(config-if)#
+SW1(config-if)#spanning-tree bpduguard enable
+SW1(config-if)#^Z
+SW1#
+
+```
+b.	Убедитесь, что защита BPDU и PortFast включены на соответствующих портах.
+```
+SW1#show spanning-tree int fa0/6 detail
+
+
+Port 6 (FastEthernet0/6) of VLAN0010 is designated forwarding
+  Port path cost 19, Port priority 128, Port Identifier 128.6
+  Designated root has priority 32778, address 0001.6329.2A53
+  Designated bridge has priority 32778, address 0001.6329.2A53
+  Designated port id is 128.6, designated path cost 19
+  Timers: message age 16, forward delay 0, hold 0
+  Number of transitions to forwarding state: 1
+  The port is in the portfast mode
+  Link type is point-to-point by default
+
+SW1#
+```
+
+```
+SW2#show spanning-tree int fa0/18 detail
+
+
+Port 18 (FastEthernet0/18) of VLAN0010 is designated forwarding
+  Port path cost 19, Port priority 128, Port Identifier 128.18
+  Designated root has priority 32778, address 0001.6329.2A53
+  Designated bridge has priority 32778, address 000D.BD25.E02D
+  Designated port id is 128.18, designated path cost 19
+  Timers: message age 16, forward delay 0, hold 0
+  Number of transitions to forwarding state: 1
+  The port is in the portfast mode
+  Link type is point-to-point by default
+
+SW2#
+```
+-------
+#### Шаг 7. Проверьте наличие сквозного ⁪подключения.
+
+-----------
+Проверьте PING свзяь между всеми устройствами в таблице IP-адресации. 
+
+PING с ПК PC-A
+
+```
+C:\>
+C:\>ping 192.168.10.1
+
+Pinging 192.168.10.1 with 32 bytes of data:
+
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+
+Ping statistics for 192.168.10.1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>ping 192.168.10.201
+
+Pinging 192.168.10.201 with 32 bytes of data:
+
+Request timed out.
+Reply from 192.168.10.201: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.201: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.201: bytes=32 time<1ms TTL=255
+
+Ping statistics for 192.168.10.201:
+    Packets: Sent = 4, Received = 3, Lost = 1 (25% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>ping 192.168.10.202
+
+Pinging 192.168.10.202 with 32 bytes of data:
+
+Request timed out.
+Reply from 192.168.10.202: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.202: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.202: bytes=32 time<1ms TTL=255
+
+Ping statistics for 192.168.10.202:
+    Packets: Sent = 4, Received = 3, Lost = 1 (25% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>ping 192.168.10.11
+
+Pinging 192.168.10.11 with 32 bytes of data:
+
+Reply from 192.168.10.11: bytes=32 time=15ms TTL=128
+Reply from 192.168.10.11: bytes=32 time<1ms TTL=128
+Reply from 192.168.10.11: bytes=32 time<1ms TTL=128
+Reply from 192.168.10.11: bytes=32 time<1ms TTL=128
+
+Ping statistics for 192.168.10.11:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 15ms, Average = 3ms
+```
+
+PING  с ПК PC-B
+
+```
+C:\>ping 192.168.10.1
+
+Pinging 192.168.10.1 with 32 bytes of data:
+
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.1: bytes=32 time<1ms TTL=255
+
+Ping statistics for 192.168.10.1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>ping 192.168.10.201
+
+Pinging 192.168.10.201 with 32 bytes of data:
+
+Request timed out.
+Reply from 192.168.10.201: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.201: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.201: bytes=32 time=5ms TTL=255
+
+Ping statistics for 192.168.10.201:
+    Packets: Sent = 4, Received = 3, Lost = 1 (25% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 5ms, Average = 1ms
+
+C:\>ping 192.168.10.202
+
+Pinging 192.168.10.202 with 32 bytes of data:
+
+Request timed out.
+Reply from 192.168.10.202: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.202: bytes=32 time<1ms TTL=255
+Reply from 192.168.10.202: bytes=32 time<1ms TTL=255
+
+Ping statistics for 192.168.10.202:
+    Packets: Sent = 4, Received = 3, Lost = 1 (25% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>ping 192.168.10.10
+
+Pinging 192.168.10.10 with 32 bytes of data:
+
+Reply from 192.168.10.10: bytes=32 time<1ms TTL=128
+Reply from 192.168.10.10: bytes=32 time<1ms TTL=128
+Reply from 192.168.10.10: bytes=32 time<1ms TTL=128
+Reply from 192.168.10.10: bytes=32 time<1ms TTL=128
+
+Ping statistics for 192.168.10.10:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>
+```
+Сетевая связанность со всеми устройствами присутствует.
+
+-----------
+### Вопросы для повторения
+
+----------------
+
+1.	С точки зрения безопасности порта на S2, почему нет значения таймера для оставшегося возраста в минутах, когда было сконфигурировано динамическое обучение - sticky?
+
+* Динамическое (липкое) обучение на порту S2 превращает изученные MAC-адреса в «липкие безопасные» записи (записываются в стартовую конфигурацию), делая их статичными и устраняя необходимость в таймере для старения и удаления этих адресов. Эти записи могут быть удалены вручную
+
+
+2.	Что касается безопасности порта на S2, если вы загружаете скрипт текущей конфигурации на S2, почему на порту 18  PC-B никогда не получит IP-адрес через DHCP?
+* PC-B может не получать IP -адрес через DHCP при загрузке скрипта текущей конфигурации в случае, если не будут указаны (настроены) доверенные (Trusted) порты на коммутаторе.
+
+
+
+
+3.	Что касается безопасности порта, в чем разница между типом абсолютного устаревания и типом устаревание по неактивности?
+
+Устаревание безопасности порта может использоваться для установки времени
+устаревания статических и динамических защищенных адресов на порту.
+
+*  Абсолютный - Защищенные адреса порта удаляются по истечении указанного времени
+устаревания.
+*   По таймеру неактивности -безопасные адреса на порту удаляются, только если они
+неактивны в течение указанного времени.
+
+
+
+Пример рабочей конфигурации коммутатора SW1 приведен [здесь](/labs/lab09/Config/config%20SW1_9.txt)
+
+Пример рабочей конфигурации коммутатора SW2 приведен [здесь](/labs/lab09/Config/config%20SW2_9.txt)
+
+Пример рабочей конфигурации маршрутизатора R1 приведен [здесь](/labs/lab09/Config/config%20R1_9.txt)
 
 
