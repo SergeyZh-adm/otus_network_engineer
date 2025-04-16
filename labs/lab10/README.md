@@ -171,6 +171,13 @@ Sending 5, 100-byte ICMP Echos to 10.53.0.4, timeout is 2 seconds:
 ..!!!
 Success rate is 60 percent (3/5), round-trip min/avg/max = 0/0/0 ms
 
+R1#ping 172.16.1.1
+
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 172.16.1.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 2/3/6 ms
+
 R1#
 ```
 IP связанность присутствует со всеми узлами сети.
