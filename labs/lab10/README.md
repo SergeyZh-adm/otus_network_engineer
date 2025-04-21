@@ -570,6 +570,8 @@ R2#
 все другие маршрутизаторы OSPF в домене маршрутизации.
 
 d.	добавьте конфигурацию, необходимую для OSPF для обработки R2 Loopback 1 как сети точка-точка. Это приводит к тому, что OSPF объявляет Loopback 1 использует маску подсети интерфейса.
+
+-----
 ```
 R2#
 R2#conf t
@@ -602,6 +604,8 @@ R2(config)#
 
 
 e.	Только на R2 добавьте конфигурацию, необходимую для предотвращения отправки объявлений OSPF в сеть Loopback 1.
+
+-----
 ```
 R2#conf t
 Enter configuration commands, one per line.  End with CNTL/Z.
@@ -639,6 +643,196 @@ R2#
 
 
 f.	Измените базовую пропускную способность для маршрутизаторов. После этой настройки перезапустите OSPF с помощью команды clear ip ospf process . Обратите внимание на сообщение консоли после установки новой опорной полосы пропускания.
+
+------
+
+На маршрутизаторе R1/
+```
+R1#
+R1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#
+R1(config)#router ospf 56
+R1(config-router)#
+R1(config-router)#auto-cost  reference-bandwidth 10000
+% OSPF: Reference bandwidth is changed.
+        Please ensure reference bandwidth is consistent across all routers.
+R1(config-router)#
+R1(config-router)#^Z
+R1#
+%SYS-5-CONFIG_I: Configured from console by console
+
+R1#clear
+R1#clear ip ospf pro
+R1#clear ip ospf process 
+Reset ALL OSPF processes? [no]: y
+
+R1#
+07:09:05: %OSPF-5-ADJCHG: Process 56, Nbr 2.2.2.2 on GigabitEthernet0/0/1 from FULL to DOWN, Neighbor Down: Adjacency forced to reset
+
+07:09:05: %OSPF-5-ADJCHG: Process 56, Nbr 2.2.2.2 on GigabitEthernet0/0/1 from FULL to DOWN, Neighbor Down: Interface down or detached
+
+R1#
+07:09:21: %OSPF-5-ADJCHG: Process 56, Nbr 2.2.2.2 on GigabitEthernet0/0/1 from LOADING to FULL, Loading Done
+
+R1#
+07:09:56: %OSPF-5-ADJCHG: Process 56, Nbr 2.2.2.2 on GigabitEthernet0/0/1 from LOADING to FULL, Loading Done
+
+R1#
+R1#
+```
+
+На маршрутизаторе R2
+
+```
+R2#
+R2#conf t 
+Enter configuration commands, one per line.  End with CNTL/Z.
+R2(config)#
+R2(config)#router ospf 56
+R2(config-router)#
+R2(config-router)#auto-cost  reference-bandwidth 10000
+% OSPF: Reference bandwidth is changed.
+        Please ensure reference bandwidth is consistent across all routers.
+R2(config-router)#
+R2(config-router)#
+R2(config-router)#^Z
+R2#
+%SYS-5-CONFIG_I: Configured from console by console
+
+R2#conf t 
+Enter configuration commands, one per line.  End with CNTL/Z.
+R2(config)#router ospf 56
+07:09:21: %OSPF-5-ADJCHG: Process 56, Nbr 1.1.1.1 on GigabitEthernet0/0/1 from LOADING to FULL, Loading Done
+
+R2(config)#^Z
+R2#
+%SYS-5-CONFIG_I: Configured from console by console
+
+R2#clear ip ospf process
+Reset ALL OSPF processes? [no]: y
+
+R2#
+07:09:36: %OSPF-5-ADJCHG: Process 56, Nbr 1.1.1.1 on GigabitEthernet0/0/1 from FULL to DOWN, Neighbor Down: Adjacency forced to reset
+
+07:09:36: %OSPF-5-ADJCHG: Process 56, Nbr 1.1.1.1 on GigabitEthernet0/0/1 from FULL to DOWN, Neighbor Down: Interface down or detached
+
+R2#
+07:09:56: %OSPF-5-ADJCHG: Process 56, Nbr 1.1.1.1 on GigabitEthernet0/0/1 from LOADING to FULL, Loading Done
+
+R2#
+R2#
+```
+После презапуска процесса OSPF  стоимость изменилась.Была равна 1, теперь стоимость составляет 100.
+```
+R1#sh ip ospf int g0/0/1
+
+GigabitEthernet0/0/1 is up, line protocol is up
+  Internet address is 10.53.0.1/24, Area 0
+  Process ID 56, Router ID 1.1.1.1, Network Type BROADCAST, Cost: 100
+  Transmit Delay is 1 sec, State DR, Priority 50
+  Designated Router (ID) 1.1.1.1, Interface address 10.53.0.1
+  Backup Designated Router (ID) 2.2.2.2, Interface address 10.53.0.2
+  Timer intervals configured, Hello 30, Dead 120, Wait 120, Retransmit 5
+    Hello due in 00:00:08
+  Index 1/1, flood queue length 0
+  Next 0x0(0)/0x0(0)
+  Last flood scan length is 1, maximum is 1
+  Last flood scan time is 0 msec, maximum is 0 msec
+  Neighbor Count is 1, Adjacent neighbor count is 1
+    Adjacent with neighbor 2.2.2.2  (Backup Designated Router)
+  Suppress hello for 0 neighbor(s)
+R1#
+````
+```
+R2#sh ip ospf int g0/0/1
+
+GigabitEthernet0/0/1 is up, line protocol is up
+  Internet address is 10.53.0.2/24, Area 0
+  Process ID 56, Router ID 2.2.2.2, Network Type BROADCAST, Cost: 100
+  Transmit Delay is 1 sec, State BDR, Priority 1
+  Designated Router (ID) 1.1.1.1, Interface address 10.53.0.1
+  Backup Designated Router (ID) 2.2.2.2, Interface address 10.53.0.2
+  Timer intervals configured, Hello 30, Dead 120, Wait 120, Retransmit 5
+    Hello due in 00:00:11
+  Index 1/1, flood queue length 0
+  Next 0x0(0)/0x0(0)
+  Last flood scan length is 1, maximum is 1
+  Last flood scan time is 0 msec, maximum is 0 msec
+  Neighbor Count is 1, Adjacent neighbor count is 1
+    Adjacent with neighbor 1.1.1.1  (Designated Router)
+  Suppress hello for 0 neighbor(s)
+R2#
+```
+
+#### Шаг 2. Убедитесь, что оптимизация OSPFv2 реализовалась.
+
+-----
+
+
+a.	Выполните команду  **show ip ospf interface g0/0/1**  на R1 и убедитесь, что приоритет интерфейса установлен равным 50, а временные интервалы — Hello 30, Dead 120, а тип сети по умолчанию — Broadcast.
+```
+R1#
+R1#sh ip ospf int g0/0/1
+
+GigabitEthernet0/0/1 is up, line protocol is up
+  Internet address is 10.53.0.1/24, Area 0
+  Process ID 56, Router ID 1.1.1.1, Network Type BROADCAST, Cost: 100
+  Transmit Delay is 1 sec, State DR, Priority 50
+  Designated Router (ID) 1.1.1.1, Interface address 10.53.0.1
+  Backup Designated Router (ID) 2.2.2.2, Interface address 10.53.0.2
+  Timer intervals configured, Hello 30, Dead 120, Wait 120, Retransmit 5
+    Hello due in 00:00:11
+  Index 1/1, flood queue length 0
+  Next 0x0(0)/0x0(0)
+  Last flood scan length is 1, maximum is 1
+  Last flood scan time is 0 msec, maximum is 0 msec
+  Neighbor Count is 1, Adjacent neighbor count is 1
+    Adjacent with neighbor 2.2.2.2  (Backup Designated Router)
+  Suppress hello for 0 neighbor(s)
+R1#
+```
+
+b.	На R1 выполните команду show ip route ospf, чтобы убедиться, что сеть R2 Loopback1 присутствует в таблице маршрутизации. Обратите внимание на разницу в метрике между этим выходным и предыдущим выходным. Также обратите внимание, что маска теперь составляет 24 бита, в отличие от 32 битов, ранее объявленных.
+
+```
+R1#
+R1#show ip route ospf
+O    192.168.1.0 [110/101] via 10.53.0.2, 00:22:19, GigabitEthernet0/0/1
+
+R1#
+```
+
+c.	Введите команду show ip route ospf на маршрутизаторе R2. Единственная информация о маршруте OSPF должна быть распространяемый по умолчанию маршрут R1.
+```
+R2#show ip route ospf
+O*E2 0.0.0.0/0 [110/1] via 10.53.0.1, 00:25:25, GigabitEthernet0/0/1
+
+R2#
+```
+
+d.	Запустите Ping до адреса интерфейса R1 Loopback 1 из R2. Выполнение команды ping должно быть успешным.
+```
+R2#
+R2#ping 172.16.1.1
+
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 172.16.1.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 0/0/0 ms
+
+R2#
+```
+Отработал распростаняемый маршрут по умолчанию.
+
+
+
+### Вопрос:
+Почему стоимость OSPF для маршрута по умолчанию отличается от стоимости OSPF в R1 для сети 192.168.1.0/24?
+
+>Cтоимость OSPF для маршрута по умолчанию составляет 1, стоимость OSPF в R1 для сети 192.168.1.0/24 - 101. Это отличие объясняется тем, что стоимость  маршрута OSPF в R1 для сети 192.168.1.0/24 складывается из стоимости маршрута до R2 (100) и стимости распространяемого маршрута по умолчанию - интерфейс Lo1 ( 1 ).
+
+
 
 
 
