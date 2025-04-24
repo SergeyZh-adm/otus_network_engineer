@@ -500,7 +500,7 @@ R2#
 ------
 #### Шаг 1. Настройте все сетевые устройства для базовой поддержки SSH.
 
-a.	Создайте локального пользователя с именем пользователя SSHadmin и зашифрованным паролем $cisco123!
+a.	Создайте локального пользователя с именем пользователя SSHadmin и зашифрованным паролем cisco .
 
 b.	Используйте ccna-lab.com в качестве доменного имени.
 
@@ -508,7 +508,61 @@ c.	Генерируйте криптоключи с помощью 1024 битн
 
 d.	Настройте первые пять линий VTY на каждом устройстве, чтобы поддерживать только SSH-соединения и с локальной аутентификацией.
 
+```
+R1(config)#ip domain name ccna-lab.com 
+R1(config)#
+R1(config)#username sshadmin privilege 15 secret cisco
+R1(config)#
+R1(config)#crypto key generate rsa
+The name for the keys will be: R1.ccna-lab.com
+Choose the size of the key modulus in the range of 360 to 2048 for your
+  General Purpose Keys. Choosing a key modulus greater than 512 may take
+  a few minutes.
+
+How many bits in the modulus [512]: 1024
+% Generating 1024 bit RSA keys, keys will be non-exportable...[OK]
+
+R1(config)#
+*Mar 1 1:1:58.312: %SSH-5-ENABLED: SSH 1.99 has been enabled
+R1(config)#ip ssh ver 2
+R1(config)#
+R1(config)#line vty 0 4
+R1(config-line)#
+R1(config-line)#login local 
+R1(config-line)#
+R1(config-line)#transport input ssh
+R1(config-line)#
+R1(config-line)#exit
+R1(config)#exit
+R1#
+```
+
+Проверим доступ к маршрутизатору R1 по SSH с ПК PC-A
+```
+C:\>
+C:\>ssh -l sshadmin 10.20.0.1
+
+Password: 
+
+
+***********************************************
+**************ATTENTION************************
+***********************************************
+
+R1#
+R1#exit
+
+[Connection to 10.20.0.1 closed by foreign host]
+C:\>
+```
+Доступ к маршрутизатору R1 по протоколу SSH присутствует.
+
+Проведем аналогичные настройки на всех сетевых устройствах.
+
+
 #### Шаг 2. Включите защищенные веб-службы с проверкой подлинности на R1.
+
+-------
 
 a.	Включите сервер HTTPS на R1.
 R1(config)# ip http secure-server 
@@ -516,4 +570,175 @@ R1(config)# ip http secure-server
 b.	Настройте R1 для проверки подлинности пользователей, пытающихся подключиться к веб-серверу.
 
 R1(config)# ip http authentication local
+
+>В используемой версии CPT нет возможности включить на R1 защищенные веб лужбы. 
+Для доступа пользователей к устройству по протоколам HTTP и HTTPS дополним схему WEB-сервером. Создадим новый VLAN 10 (Servers), введем WEB-сервер в VLAN 10  и присвоим серверу IP адрес 10.10.0.10 /24.  
+Так же добавим в сервер второй интерфейс и включим его в LAN 20 c IP адресом 10.20.0.5 /24  
+Изменим настроики коммутаторов и маршрутизатора R1  в соответствии с новым VLAN 10. 
+
+![](Топология_11_2.png)
+----
+### Часть 6. Проверка подключения.
+
+----
+#### Шаг 1. Настройте узлы ПК.
+Адреса ПК можно посмотреть в таблице адресации.
+
+#### Шаг 2. Выполните следующие тесты. Эхозапрос должен пройти успешно.
+
+Таблица для проверки.
+
+![](Топология_11_3.png)
+
+Проверка с ПК PC-A
+```
+C:\>ping 10.40.0.10
+
+Pinging 10.40.0.10 with 32 bytes of data:
+
+Reply from 10.40.0.10: bytes=32 time<1ms TTL=127
+Reply from 10.40.0.10: bytes=32 time<1ms TTL=127
+Reply from 10.40.0.10: bytes=32 time<1ms TTL=127
+Reply from 10.40.0.10: bytes=32 time<1ms TTL=127
+
+Ping statistics for 10.40.0.10:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>ping 10.20.0.1
+
+Pinging 10.20.0.1 with 32 bytes of data:
+
+Reply from 10.20.0.1: bytes=32 time<1ms TTL=255
+Reply from 10.20.0.1: bytes=32 time<1ms TTL=255
+Reply from 10.20.0.1: bytes=32 time=6ms TTL=255
+Reply from 10.20.0.1: bytes=32 time<1ms TTL=255
+
+Ping statistics for 10.20.0.1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 6ms, Average = 1ms
+```
+
+Проверка с ПК PC-B
+
+```
+C:\>ping 10.30.0.10
+
+Pinging 10.30.0.10 with 32 bytes of data:
+
+Reply from 10.30.0.10: bytes=32 time<1ms TTL=127
+Reply from 10.30.0.10: bytes=32 time<1ms TTL=127
+Reply from 10.30.0.10: bytes=32 time<1ms TTL=127
+Reply from 10.30.0.10: bytes=32 time<1ms TTL=127
+
+Ping statistics for 10.30.0.10:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>ping 172.16.1.1
+
+Pinging 172.16.1.1 with 32 bytes of data:
+
+Reply from 172.16.1.1: bytes=32 time<1ms TTL=255
+Reply from 172.16.1.1: bytes=32 time<1ms TTL=255
+Reply from 172.16.1.1: bytes=32 time<1ms TTL=255
+Reply from 172.16.1.1: bytes=32 time<1ms TTL=255
+
+Ping statistics for 172.16.1.1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>ping 10.20.0.1
+
+Pinging 10.20.0.1 with 32 bytes of data:
+
+Reply from 10.20.0.1: bytes=32 time<1ms TTL=255
+Reply from 10.20.0.1: bytes=32 time<1ms TTL=255
+Reply from 10.20.0.1: bytes=32 time<1ms TTL=255
+Reply from 10.20.0.1: bytes=32 time=7ms TTL=255
+
+Ping statistics for 10.20.0.1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 7ms, Average = 1ms
+
+C:\>telnet 10.10.0.10 443
+Trying 10.10.0.10 ...Open
+
+[Connection to 10.10.0.10 closed by foreign host]
+C:\>
+C:\>telnet 10.10.0.10 80
+Trying 10.10.0.10 ...Open
+
+[Connection to 10.10.0.10 closed by foreign host]
+C:\>telnet 10.20.0.5 443
+Trying 10.20.0.5 ...Open
+
+[Connection to 10.20.0.5 closed by foreign host]
+C:\>
+C:\>telnet 10.20.0.5 80
+Trying 10.20.0.5 ...Open
+
+[Connection to 10.20.0.5 closed by foreign host]
+C:\>
+C:\>ssh -l sshadmin 10.20.0.1
+
+Password: 
+
+
+***********************************************
+**************ATTENTION************************
+***********************************************
+
+R1#exit
+
+[Connection to 10.20.0.1 closed by foreign host]
+C:\>
+C:\>ssh -l sshadmin 172.16.1.1
+
+Password: 
+
+
+***********************************************
+**************ATTENTION************************
+***********************************************
+
+R1#exit
+
+[Connection to 172.16.1.1 closed by foreign host]
+C:\>
+```
+Тестовые подключения прошли успешно.
+
+-----
+### Часть 7. Настройка и проверка списков контроля доступа (ACL)
+
+-----
+
+При проверке базового подключения компания требует реализации следующих политик безопасности:
+
+* Политика1. Сеть Sales не может использовать SSH в сети Management (но в  другие сети SSH разрешен). 
+* Политика 2. Сеть Sales не имеет доступа к IP-адресам в сети Management с помощью любого веб-протокола (HTTP/HTTPS). Сеть Sales также не имеет доступа к интерфейсам R1 с помощью любого веб-протокола. Разрешён весь другой веб-трафик (обратите внимание — Сеть Sales  может получить доступ к интерфейсу Loopback 1 на R1).
+* Политика3. Сеть Sales не может отправлять эхо-запросы ICMP в сети Operations или Management. Разрешены эхо-запросы ICMP к другим адресатам. 
+* Политика 4: Cеть Operations  не может отправлять ICMP эхозапросы в сеть Sales. Разрешены эхо-запросы ICMP к другим адресатам. 
+
+#### Шаг 1. Проанализируйте требования к сети и политике безопасности для планирования реализации ACL.
+ 
+#### Шаг 2. Разработка и применение расширенных списков доступа, которые будут соответствовать требованиям политики безопасности.
+
+#### Шаг 3. Убедитесь, что политики безопасности применяются развернутыми списками доступа.
+
+
+Выполните следующие тесты. Ожидаемые результаты показаны в таблице:
+
+![](Топология_11_4.png)
+
+
+
+
+
 
