@@ -1,0 +1,144 @@
+Building configuration...
+
+Current configuration : 2255 bytes
+!
+version 15.4
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+service password-encryption
+!
+hostname R1
+!
+login block-for 120 attempts 3 within 60
+!
+!
+enable secret 5 $1$mERr$9cTjUIEqNGurQiFU.ZeCi1
+!
+!
+!
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+!
+!
+username sshadmin privilege 15 secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
+!
+!
+!
+!
+!
+!
+!
+!
+ip ssh version 2
+no ip domain-lookup
+ip domain-name ccna-lab.com
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface Loopback1
+ ip address 172.16.1.1 255.255.255.0
+!
+interface GigabitEthernet0/0/0
+ no ip address
+ duplex auto
+ speed auto
+ shutdown
+!
+interface GigabitEthernet0/0/1
+ no ip address
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/0/1.10
+ description VLAN 10 Servers
+ encapsulation dot1Q 10
+ ip address 10.10.0.1 255.255.255.0
+!
+interface GigabitEthernet0/0/1.20
+ description VLAN 20 Management
+ encapsulation dot1Q 20
+ ip address 10.20.0.1 255.255.255.0
+!
+interface GigabitEthernet0/0/1.30
+ description VLAN 30 Operations
+ encapsulation dot1Q 30
+ ip address 10.30.0.1 255.255.255.0
+ ip access-group OPERATIONS in
+!
+interface GigabitEthernet0/0/1.40
+ description VLAN 40 Sales
+ encapsulation dot1Q 40
+ ip address 10.40.0.1 255.255.255.0
+ ip access-group SALES in
+!
+interface GigabitEthernet0/0/1.1000
+ encapsulation dot1Q 1000 native
+ no ip address
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+ip classless
+!
+ip flow-export version 9
+!
+!
+ip access-list extended sl_def_acl
+ deny tcp any any eq telnet
+ deny tcp any any eq www
+ deny tcp any any eq 22
+ permit tcp any any eq 22
+ip access-list extended SALES
+ deny tcp any 10.20.0.0 0.0.0.255 eq 22
+ deny icmp any 10.20.0.0 0.0.0.255
+ deny icmp any 10.30.0.0 0.0.0.255
+ deny tcp any 10.20.0.0 0.0.0.255 range www 443
+ permit ip any any
+ip access-list extended OPERATIONS
+ deny icmp any 10.40.0.0 0.0.0.255
+ permit ip any any
+!
+no cdp run
+!
+banner motd ^C
+***********************************************
+**************ATTENTION************************
+***********************************************^C
+!
+!
+!
+!
+!
+line con 0
+ exec-timeout 5 0
+ password 7 0822455D0A16
+ logging synchronous
+ login
+!
+line aux 0
+ login
+!
+line vty 0 4
+ exec-timeout 5 0
+ password 7 0822404F1A0A
+ logging synchronous
+ login local
+ transport input ssh
+!
+!
+!
+end
+
+
+R1#

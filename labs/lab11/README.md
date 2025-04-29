@@ -756,15 +756,241 @@ C:\>
 Необходимо для сети Operations - 10.30.0.0 /24
 1.	Запретить отправлять ICMP эхозапросы в сеть Sales (10.40.0.0/24). Разрешены эхо-запросы ICMP к другим адресатам.
 
-Так как в политиках используются протоколы ICMP, HTTP, HTTPS, SSH, то необходимо применять расширенные ACL, которые позволяют более гибко работать с протоколами и портами. Стандартные ACL позволяют работать только с IP адресами.
+Так как в политиках используются протоколы ICMP, HTTP, HTTPS, SSH, то необходимо применять расширенные ACL, которые позволяют более гибко работать с протоколами и портами. Стандартные ACL позволяют работать только с IP адресами источника.
 
- 
+----- 
 #### Шаг 2. Разработка и применение расширенных списков доступа, которые будут соответствовать требованиям политики безопасности.
+
+-----
+
+1. Создадим на маршрутизаторе R1 расширенный ACL SALES в соответствии с политиками для сети SALES.
+Распологать ACL будем на интерфейсе ближе к источнику (сети SALES) на интерфейсе gig0/0/1.40 во входном направлении, что бы сразу отбрасывать запрещенные пакеты. В конце списка правил необходимо вставить разрешающее правило для всех разрешенных пакетов.
+```
+R1(config)#
+R1(config)#
+R1(config)#ip access-list extended SALES
+R1(config-ext-nacl)#
+!
+! Запрещаем подключение к сети 10.20.0.0/24 по протоколу SSH
+R1(config-ext-nacl)#deny tcp any 10.20.0.0 0.0.0.255 eq 22
+!
+! Запрещаем эхо-запросы  ко всем узлам сети 10.20.0.0/24 
+R1(config-ext-nacl)# deny icmp any 10.20.0.0 0.0.0.255
+!
+! Запрещаем эхо-запросы ко всем узлам  сети 10.30.0.0/24 
+R1(config-ext-nacl)# deny icmp any 10.30.0.0 0.0.0.255
+!
+!Запрещаем подключение к сети 10.20.0.0/24 по протоколу HTTP и HTTPS
+R1(config-ext-nacl)# deny tcp any 10.20.0.0 0.0.0.255 range www 443
+!
+! Разрешаем прохождение всего остального трафика IP 
+R1(config-ext-nacl)# permit ip any any
+R1(config-ext-nacl)#
+R1(config-ext-nacl)#exit
+R1(config)#
+R1(config)#
+!
+! Распологаем созданный ACL лист на входной интерфейс сети SALES gig0/0/1.40
+R1(config)#int gig0/0/1.40
+R1(config-subif)#
+R1(config-subif)#
+R1(config-subif)#ip access-group SALES in
+R1(config-subif)#
+R1(config-subif)#
+R1(config-subif)#^Z
+R1#
+%SYS-5-CONFIG_I: Configured from console by console
+
+R1#
+R1#sh ip access-lists SALES
+Extended IP access list SALES
+    deny tcp any 10.20.0.0 0.0.0.255 eq 22
+    deny icmp any 10.20.0.0 0.0.0.255
+    deny icmp any 10.30.0.0 0.0.0.255
+    deny tcp any 10.20.0.0 0.0.0.255 range www 443
+    permit ip any any
+
+```
+
+2. Создадим на маршрутизаторе R1 расширенный ACL OPERATIONS  в соответствии с политиками для сети OPERATIONS. Распологать ACL будем на интерфейсе ближе к источнику (сети OPERATIONS) на интерфейсе gig0/0/1.30 во входном направлении, что бы сразу отбрасывать запрещенные пакеты. В конце списка правил необходимо вставить разрешающее правило для всех разрешенных пакетов.
+
+```
+R1(config)#
+R1(config)#ip access-list extended OPERATIONS
+R1(config-ext-nacl)#
+R1(config-ext-nacl)#deny icmp any 10.40.0.0 0.0.0.255
+R1(config-ext-nacl)#
+R1(config-ext-nacl)#permit ip any any
+R1(config-ext-nacl)#
+R1(config-ext-nacl)#
+R1(config-ext-nacl)#exit
+R1(config)#
+R1(config)#int gig0/0/1.30
+R1(config-subif)#
+R1(config-subif)#
+R1(config-subif)#ip access-group OPERATIONS in
+R1(config-subif)#
+R1(config-subif)#
+R1(config-subif)#exit
+R1(config)#exit
+R1#
+%SYS-5-CONFIG_I: Configured from console by console
+
+R1#sh ip access-lists OPERATION
+R1#sh ip access-lists OPERATIONS
+Extended IP access list OPERATIONS
+    deny icmp any 10.40.0.0 0.0.0.255
+    permit ip any any
+
+R1#
+```
 
 #### Шаг 3. Убедитесь, что политики безопасности применяются развернутыми списками доступа.
 
 
 Выполните следующие тесты. Ожидаемые результаты показаны в таблице:
+
+Выполняем тесты с ПК PC-A.
+
+```
+Cisco Packet Tracer PC Command Line 1.0
+C:\>ping 10.40.0.10
+
+Pinging 10.40.0.10 with 32 bytes of data:
+
+Reply from 10.30.0.1: Destination host unreachable.
+Reply from 10.30.0.1: Destination host unreachable.
+Reply from 10.30.0.1: Destination host unreachable.
+Reply from 10.30.0.1: Destination host unreachable.
+
+Ping statistics for 10.40.0.10:
+    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss),
+
+C:\>ping 10.20.0.1
+
+Pinging 10.20.0.1 with 32 bytes of data:
+
+Reply from 10.20.0.1: bytes=32 time<1ms TTL=255
+Reply from 10.20.0.1: bytes=32 time<1ms TTL=255
+Reply from 10.20.0.1: bytes=32 time<1ms TTL=255
+Reply from 10.20.0.1: bytes=32 time<1ms TTL=255
+
+Ping statistics for 10.20.0.1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>
+C:\>ping 10.10.0.10
+
+Pinging 10.10.0.10 with 32 bytes of data:
+
+Reply from 10.10.0.10: bytes=32 time<1ms TTL=127
+Reply from 10.10.0.10: bytes=32 time<1ms TTL=127
+Reply from 10.10.0.10: bytes=32 time<1ms TTL=127
+Reply from 10.10.0.10: bytes=32 time<1ms TTL=127
+
+Ping statistics for 10.10.0.10:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>
+```
+Доступ по протоколу ICMP имеется ко всем узлам  кроме узлов сети SALES 10.40.0.0/24
+Так же имеется доступ к WEB-серверу  и сети управления по протоколу SSH.
+
+Выполняем тесты с ПК PC-B.
+
+```
+Cisco Packet Tracer PC Command Line 1.0
+C:\>ping 10.30.0.10
+
+Pinging 10.30.0.10 with 32 bytes of data:
+
+Reply from 10.40.0.1: Destination host unreachable.
+Reply from 10.40.0.1: Destination host unreachable.
+Reply from 10.40.0.1: Destination host unreachable.
+Reply from 10.40.0.1: Destination host unreachable.
+
+Ping statistics for 10.30.0.10:
+    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss),
+
+C:\>ping 10.30.0.1
+
+Pinging 10.30.0.1 with 32 bytes of data:
+
+Reply from 10.40.0.1: Destination host unreachable.
+Reply from 10.40.0.1: Destination host unreachable.
+Reply from 10.40.0.1: Destination host unreachable.
+Reply from 10.40.0.1: Destination host unreachable.
+
+Ping statistics for 10.30.0.1:
+    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss),
+
+C:\>ping 10.20.0.1
+
+Pinging 10.20.0.1 with 32 bytes of data:
+
+Reply from 10.40.0.1: Destination host unreachable.
+Reply from 10.40.0.1: Destination host unreachable.
+Reply from 10.40.0.1: Destination host unreachable.
+Reply from 10.40.0.1: Destination host unreachable.
+
+Ping statistics for 10.20.0.1:
+    Packets: Sent = 4, Received = 0, Lost = 4 (100% loss),
+
+C:\>ping 172.16.1.1
+
+Pinging 172.16.1.1 with 32 bytes of data:
+
+Reply from 172.16.1.1: bytes=32 time<1ms TTL=255
+Reply from 172.16.1.1: bytes=32 time<1ms TTL=255
+Reply from 172.16.1.1: bytes=32 time<1ms TTL=255
+Reply from 172.16.1.1: bytes=32 time<1ms TTL=255
+
+Ping statistics for 172.16.1.1:
+    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 0ms, Average = 0ms
+
+C:\>ssh -l sshadmin 10.20.0.4
+
+% Connection timed out; remote host not responding
+C:\>ssh -l sshadmin 172.16.1.1
+
+Password: 
+
+
+***********************************************
+**************ATTENTION************************
+***********************************************
+
+R1#exit
+
+[Connection to 172.16.1.1 closed by foreign host]
+C:\>telnet 10.2.0.5 80
+Trying 10.2.0.5 ...
+% Connection timed out; remote host not responding
+C:\>telnet 10.2.0.5 443
+Trying 10.2.0.5 ...
+% Connection timed out; remote host not responding
+C:\>telnet 10.10.0.10 80
+Trying 10.10.0.10 ...Open
+
+[Connection to 10.10.0.10 closed by foreign host]
+C:\>telnet 10.10.0.10 443
+Trying 10.10.0.10 ...Open
+
+[Connection to 10.10.0.10 closed by foreign host]
+C:\>
+
+```
+
+Для сети SALES выполнены все политики безопасности.
+
+Данные тестов сведены в таблицу. Все ожидаемые результаты подтверждены.
+
 
 ![](Топология_11_4.png)
 
