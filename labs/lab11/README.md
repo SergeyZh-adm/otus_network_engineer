@@ -772,16 +772,16 @@ R1(config)#ip access-list extended SALES
 R1(config-ext-nacl)#
 !
 ! Запрещаем подключение к сети 10.20.0.0/24 по протоколу SSH
-R1(config-ext-nacl)#deny tcp any 10.20.0.0 0.0.0.255 eq 22
+R1(config-ext-nacl)#deny tcp 10.40.0.0 0.0.0.255 10.20.0.0 0.0.0.255 eq 22
 !
 ! Запрещаем эхо-запросы  ко всем узлам сети 10.20.0.0/24 
-R1(config-ext-nacl)# deny icmp any 10.20.0.0 0.0.0.255
+R1(config-ext-nacl)# deny icmp 10.40.0.0 0.0.0.255 10.20.0.0 0.0.0.255
 !
 ! Запрещаем эхо-запросы ко всем узлам  сети 10.30.0.0/24 
-R1(config-ext-nacl)# deny icmp any 10.30.0.0 0.0.0.255
+R1(config-ext-nacl)# deny icmp 10.40.0.0 0.0.0.255 10.30.0.0 0.0.0.255
 !
 !Запрещаем подключение к сети 10.20.0.0/24 по протоколу HTTP и HTTPS
-R1(config-ext-nacl)# deny tcp any 10.20.0.0 0.0.0.255 range www 443
+R1(config-ext-nacl)# deny tcp 10.40.0.0 0.0.0.255 10.20.0.0 0.0.0.255 range www 443
 !
 ! Разрешаем прохождение всего остального трафика IP 
 R1(config-ext-nacl)# permit ip any any
@@ -804,11 +804,13 @@ R1#
 R1#
 R1#sh ip access-lists SALES
 Extended IP access list SALES
-    deny tcp any 10.20.0.0 0.0.0.255 eq 22
-    deny icmp any 10.20.0.0 0.0.0.255
-    deny icmp any 10.30.0.0 0.0.0.255
-    deny tcp any 10.20.0.0 0.0.0.255 range www 443
+    deny tcp 10.40.0.0 0.0.0.255 10.20.0.0 0.0.0.255 eq 22
+    deny icmp 10.40.0.0 0.0.0.255 10.20.0.0 0.0.0.255
+    deny icmp 10.40.0.0 0.0.0.255 10.30.0.0 0.0.0.255
+    deny tcp 10.40.0.0 0.0.0.255 10.20.0.0 0.0.0.255 range www 443
     permit ip any any
+
+R1#
 
 ```
 
@@ -818,7 +820,7 @@ Extended IP access list SALES
 R1(config)#
 R1(config)#ip access-list extended OPERATIONS
 R1(config-ext-nacl)#
-R1(config-ext-nacl)#deny icmp any 10.40.0.0 0.0.0.255
+R1(config-ext-nacl)#deny icmp 10.30.0.0 0.0.0.255 10.40.0.0 0.0.0.255
 R1(config-ext-nacl)#
 R1(config-ext-nacl)#permit ip any any
 R1(config-ext-nacl)#
@@ -839,7 +841,7 @@ R1#
 R1#sh ip access-lists OPERATION
 R1#sh ip access-lists OPERATIONS
 Extended IP access list OPERATIONS
-    deny icmp any 10.40.0.0 0.0.0.255
+    deny icmp 10.30.0.0 0.0.0.255 10.40.0.0 0.0.0.255
     permit ip any any
 
 R1#
