@@ -838,7 +838,6 @@ R1(config)#exit
 R1#
 %SYS-5-CONFIG_I: Configured from console by console
 
-R1#sh ip access-lists OPERATION
 R1#sh ip access-lists OPERATIONS
 Extended IP access list OPERATIONS
     deny icmp 10.30.0.0 0.0.0.255 10.40.0.0 0.0.0.255
