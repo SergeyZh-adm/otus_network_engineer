@@ -1,6 +1,6 @@
 Building configuration...
 
-Current configuration : 2255 bytes
+Current configuration : 2512 bytes
 !
 version 15.4
 no service timestamps log datetime msec
@@ -99,14 +99,17 @@ ip access-list extended sl_def_acl
  deny tcp any any eq www
  deny tcp any any eq 22
  permit tcp any any eq 22
-ip access-list extended SALES
- deny tcp any 10.20.0.0 0.0.0.255 eq 22
- deny icmp any 10.20.0.0 0.0.0.255
- deny icmp any 10.30.0.0 0.0.0.255
- deny tcp any 10.20.0.0 0.0.0.255 range www 443
- permit ip any any
 ip access-list extended OPERATIONS
- deny icmp any 10.40.0.0 0.0.0.255
+ deny icmp 10.30.0.0 0.0.0.255 10.40.0.0 0.0.0.255
+ permit ip any any
+ip access-list extended SALES
+ deny tcp 10.40.0.0 0.0.0.255 10.20.0.0 0.0.0.255 eq 22
+ deny icmp 10.40.0.0 0.0.0.255 10.20.0.0 0.0.0.255
+ deny icmp 10.40.0.0 0.0.0.255 10.30.0.0 0.0.0.255
+ deny tcp 10.40.0.0 0.0.0.255 10.20.0.0 0.0.0.255 range www 443
+ deny tcp 10.40.0.0 0.0.0.255 host 10.10.0.1 range www 443
+ deny tcp 10.40.0.0 0.0.0.255 host 10.30.0.1 range www 443
+ deny tcp 10.40.0.0 0.0.0.255 host 10.40.0.1 range www 443
  permit ip any any
 !
 no cdp run
@@ -139,6 +142,3 @@ line vty 0 4
 !
 !
 end
-
-
-R1#
