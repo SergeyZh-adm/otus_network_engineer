@@ -232,8 +232,25 @@ Duplex: full
 
 SW1#
 ```
+f.	Отключить CDP глобально на всех устройствах с помощью команды **no cdp run**
 
+```
+R1#
+R1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#
+R1(config)#no cdp run
+R1(config)#
+R1(config)#
+R1(config)#exit
+R1#
+%SYS-5-CONFIG_I: Configured from console by console
 
+R1#
+R1#sh cdp
+% CDP is not enabled
+R1#
+```
 
 ---
 ### Часть 3. Обнаружение сетевых ресурсов с помощью протокола LLDP.
@@ -241,6 +258,305 @@ SW1#
 ----
 На устройствах Cisco протокол LLDP может быть выключен по умолчанию. Воспользуйтесь LLDP, чтобы обнаружить порты, к которым подключены кабели.
 
+a.	Введите соответствующую команду lldp, чтобы включить LLDP на всех устройствах в топологии.
+```
+
+R1#
+R1#sh lldp
+% LLDP is not enabled
+R1#
+R1#conf t
+Enter configuration commands, one per line.  End with CNTL/Z.
+R1(config)#lldp run
+R1(config)#
+R1(config)#exit
+R1#
+%SYS-5-CONFIG_I: Configured from console by console
+
+R1#sh lldp
+
+Global LLDP Information:
+    Status: ACTIVE
+    LLDP advertisements are sent every 30 seconds
+    LLDP hold time advertised is 120 seconds
+    LLDP interface reinitialisation delay is 2 seconds
+R1#
+```
+
+b.	На S1 выполните соответствующую команду lldp, чтобы предоставить подробную информацию о соседних устройствах. 
+```
+SW1#sh lldp neighbors
+Capability codes:
+    (R) Router, (B) Bridge, (T) Telephone, (C) DOCSIS Cable Device
+    (W) WLAN Access Point, (P) Repeater, (S) Station, (O) Other
+Device ID           Local Intf     Hold-time  Capability      Port ID
+R1                  Fa0/5          120        R               Gig0/0/1
+SW2                 Fa0/1          120        B               Fa0/1
+
+Total entries displayed: 2
+SW1#
+SW1#
+SW1#sh lldp entr
+SW1#sh lldp ?
+  neighbors  LLDP neighbor entries
+  <cr>
+SW1#
+SW1#sh lldp neighbors detail 
+------------------------------------------------
+Chassis id: 0001.C72A.2302
+Port id: Gig0/0/1
+Port Description: GigabitEthernet0/0/1
+System Name: R1
+System Description:
+Cisco IOS XE Software, Version 03.13.04.S - Extended Support Release
+Cisco IOS Software, ISR Software (X86_64_LINUX_IOSD-UNIVERSALK9-M), Version 15.5(3)S5, RELEASE SOFTWARE (fc2)
+Technical Support: http://www.cisco.com/techsupport
+Copyright (c) 1986-2017 by Cisco Systems, Inc.
+Compiled Mon 05-Oct-15 11:24 by mcpre
+Time remaining: 90 seconds
+System Capabilities: R
+Enabled Capabilities: R
+Management Addresses - not advertised
+Auto Negotiation - supported, enabled
+Physical media capabilities:
+    1000baseT(HD)
+    100baseT(FD)
+Media Attachment Unit type: 10
+Vlan ID: 1
+------------------------------------------------
+Chassis id: 0060.4741.079B
+Port id: Fa0/1
+Port Description: FastEthernet0/1
+System Name: SW2
+System Description:
+Cisco IOS Software, C2960 Software (C2960-LANBASEK9-M), Version 15.0(2)SE4, RELEASE SOFTWARE (fc1)
+Technical Support: http://www.cisco.com/techsupport
+Copyright (c) 1986-2013 by Cisco Systems, Inc.
+Compiled Wed 26-Jun-13 02:49 by mnguyen
+Time remaining: 90 seconds
+System Capabilities: B
+Enabled Capabilities: B
+Management Addresses - not advertised
+Auto Negotiation - supported, enabled
+Physical media capabilities:
+    100baseT(FD)
+    100baseT(HD)
+    1000baseT(HD)
+Media Attachment Unit type: 10
+Vlan ID: 1
+
+Total entries displayed: 2
+SW1#
+```
+Вопрос.
+
+Что такое chassis ID  для коммутатора S2?
+
+**Chassis id: 0060.4741.079B**  для коммутатора SW2 это MAC адрес коммутатора SW2.
+Но можно настроить выод команды, что бы отображался IP адрес.
+
+c.	Соединитесь через консоль на всех устройствах и используйте команды LLDP, необходимые для отображения топологии физической сети только из выходных данных команды show.
+
+На маршрутизаторе R1:
+```
+R1#sh lldp nei
+Capability codes:
+    (R) Router, (B) Bridge, (T) Telephone, (C) DOCSIS Cable Device
+    (W) WLAN Access Point, (P) Repeater, (S) Station, (O) Other
+Device ID           Local Intf     Hold-time  Capability      Port ID
+SW1                 Gig0/0/1       120        B               Fa0/5
+
+Total entries displayed: 1
+R1#
+```
+На коммутаторе SW1:
+```
+SW1>en
+Password: 
+SW1#sh lldp nei
+Capability codes:
+    (R) Router, (B) Bridge, (T) Telephone, (C) DOCSIS Cable Device
+    (W) WLAN Access Point, (P) Repeater, (S) Station, (O) Other
+Device ID           Local Intf     Hold-time  Capability      Port ID
+R1                  Fa0/5          120        R               Gig0/0/1
+SW2                 Fa0/1          120        B               Fa0/1
+
+Total entries displayed: 2
+SW1#
+```
+На коммутаторе SW2:
+```
+SW2>
+SW2>en
+Password: 
+SW2#sh lldp nei
+Capability codes:
+    (R) Router, (B) Bridge, (T) Telephone, (C) DOCSIS Cable Device
+    (W) WLAN Access Point, (P) Repeater, (S) Station, (O) Other
+Device ID           Local Intf     Hold-time  Capability      Port ID
+R2                  Fa0/5          120        R               Gig0/0/1
+SW1                 Fa0/1          120        B               Fa0/1
+
+Total entries displayed: 2
+SW2#
+```
+
+На маршрутизаторе R2:
+```
+R2>en
+Password: 
+R2#sh lldp nei
+Capability codes:
+    (R) Router, (B) Bridge, (T) Telephone, (C) DOCSIS Cable Device
+    (W) WLAN Access Point, (P) Repeater, (S) Station, (O) Other
+Device ID           Local Intf     Hold-time  Capability      Port ID
+SW2                 Gig0/0/1       120        B               Fa0/5
+
+Total entries displayed: 1
+R2#
+```
+
+Таким образом можно составить топологию физической сети.
+
+---
+### Часть 4. Настройка NTP.
+
+----
+В части 4 необходимо настроить маршрутизатор R1 в качестве сервера NTP, а маршрутизатор R2 в качестве клиента NTP маршрутизатора R1. Необходимо выполнить синхронизацию времени для Syslog и отладочных функций. Если время не синхронизировано, сложно определить, какое сетевое событие стало причиной данного сообщения.
+
+#### Шаг 1. Выведите на экран текущее время.
+
+
+Введите команду show clock для отображения текущего времени на R1. Запишите отображаемые сведения о текущем времени в следующей таблице.
+
+```
+R1#
+R1#sh clo
+R1#sh clock det
+R1#sh clock detail 
+*2:8:40.936 UTC Mon Mar 1 1993
+Time source is hardware calendar
+R1#
+```
+
+| | | | |
+|-------------------------|:----------------:|:-----------------|---------|
+|Дата | Время | Часовой пояс|Источник времени|
+|  01.03.1993 | 02:08:40 | UTC |  hardware calendar |
+
+>По умолчанию, если параметр clock не установлен, при каждом включении маршрутизатора время начинается с 00 часов 00 минут 00 секунд понедельника 1 марта 1993 года. Часы хранятся в формате UTC (Coordinated Universal Time), это то же, что и более привычный для нас GMT (Greenwich Mean Time) - среднее время по гринвичскому меридиану.
+
+#### Шаг 2. Установите время.
+С помощью команды clock set установите время на маршрутизаторе R1. Введенное время должно быть в формате UTC. 
+
+```
+R1#
+R1#clock set 15:52:24 30 may 2025
+R1#
+R1#
+R1#sh clock 
+15:52:36.814 UTC Fri May 30 2025
+R1#
+```
+
+#### Шаг 3. Настройте главный сервер NTP.
+Настройте R1 в качестве хозяина NTP с уровнем слоя 4.
+```
+R1(config)#ntp master 4
+R1(config)#
+R1(config)#
+
+R1#sh ntp status 
+Clock is synchronized, stratum 4, reference is 127.127.1.1
+nominal freq is 250.0000 Hz, actual freq is 249.9990 Hz, precision is 2**24
+reference time is EBBB7A80.00000076 (16:19:12.118 UTC Fri May 30 2025)
+clock offset is 0.00 msec, root delay is 0.00  msec
+root dispersion is 0.00 msec, peer dispersion is 0.48 msec.
+loopfilter state is 'CTRL' (Normal Controlled Loop), drift is - 0.000001193 s/s system poll interval is 6, last update was 57 sec ago.
+R1#
+
+```
+
+#### Шаг 4. Настройте клиент NTP.
+a.	Выполните соответствующую команду на S1 и S2, чтобы просмотреть настроенное время. Запишите текущее время,  в следующей таблице.
+
+```
+SW1#
+SW1#
+SW1#sh clock det
+*2:46:34.365 UTC Mon Mar 1 1993
+Time source is hardware calendar
+SW1#
+
+
+SW2#
+SW2#sh clo
+SW2#sh clock det
+*2:47:42.356 UTC Mon Mar 1 1993
+Time source is hardware calendar
+SW2#
+
+```
+|  | | | | |
+|--- |-------------------------|:----------------:|:-----------------|---------|
+| |Дата | Время | Часовой пояс|Источник времени|
+| SW1 |  01.03.1993 | 02:46:34 | UTC |  hardware calendar |
+| SW2 |  01.03.1993 | 02:46:34  |UTC   |hardware calendar|
+
+
+b.	Настройте S1 и S2 в качестве клиентов NTP. Используйте соответствующие команды NTP для получения времени от интерфейса G0/0/1 R1, а также для периодического обновления календаря или аппаратных часов коммутатора.
+```
+SW1(config)#ntp server 10.22.0.1
+SW1(config)#
+SW1(config)#exit
+SW1#
+%SYS-5-CONFIG_I: Configured from console by console
+
+
+SW1#sh ntp associations 
+
+address         ref clock       st   when     poll    reach  delay          offset            disp
+*~10.22.0.1     127.127.1.1     4    2        16      77     0.00           0.00              0.12
+ * sys.peer, # selected, + candidate, - outlyer, x falseticker, ~ configured
+
+
+SW1#
+SW1#sh clock detail 
+16:34:51.134 UTC Fri May 30 2025
+Time source is NTP
+SW1#
+
+
+
+
+SW2(config)#ntp server 10.22.0.1
+SW2(config)#
+SW2(config)#
+SW2(config)#exit
+SW2#
+%SYS-5-CONFIG_I: Configured from console by console
+
+SW2#
+SW2#sh ntp ass
+SW2#sh ntp associations 
+
+address         ref clock       st   when     poll    reach  delay          offset            disp
+ ~10.22.0.1     127.127.1.1     4    0        16      3      0.00           1017667381592.00  0.12
+ * sys.peer, # selected, + candidate, - outlyer, x falseticker, ~ configured
+SW2#
+
+SW2#sh clock de
+SW2#sh clock detail 
+16:34:35.914 UTC Fri May 30 2025
+Time source is NTP
+SW2#
+```
+
+Шаг 5. Проверьте настройку NTP.
+a.	Используйте соответствующую команду show , чтобы убедиться, что S1 и S2 синхронизированы с R1.
+Примечание. Синхронизация метки времени на маршрутизаторе R2 с меткой времени на маршрутизаторе R1 может занять несколько минут.
+b.	Выполните соответствующую команду на S1 и S2, чтобы просмотреть настроенное время и сравнить ранее записанное время.
+Откройте окно конфигурации
 
 
 
