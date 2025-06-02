@@ -1,0 +1,107 @@
+Building configuration...
+
+Current configuration : 1312 bytes
+!
+version 15.4
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+service password-encryption
+!
+hostname R1
+!
+login block-for 120 attempts 3 within 60
+!
+!
+enable secret 5 $1$mERr$9cTjUIEqNGurQiFU.ZeCi1
+!
+!
+!
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+!
+!
+username sshadmin privilege 15 secret 5 $1$mERr$9cTjUIEqNGurQiFU.ZeCi1
+!
+!
+lldp run
+!
+!
+!
+!
+!
+!
+!
+ip ssh version 2
+ip domain-name mydomain.com
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface Loopback1
+ ip address 172.16.1.1 255.255.255.0
+!
+interface GigabitEthernet0/0/0
+ no ip address
+ duplex auto
+ speed auto
+ shutdown
+!
+interface GigabitEthernet0/0/1
+ ip address 10.22.0.1 255.255.255.0
+ duplex auto
+ speed auto
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+ip classless
+!
+ip flow-export version 9
+!
+!
+ip access-list extended sl_def_acl
+ deny tcp any any eq telnet
+ deny tcp any any eq www
+ deny tcp any any eq 22
+ permit tcp any any eq 22
+!
+no cdp run
+!
+banner motd ^C
+***********************************************
+*************ATTENTION*************************
+***********************************************^C
+!
+!
+!
+!
+!
+line con 0
+ exec-timeout 5 0
+ password 7 0822455D0A16
+ logging synchronous
+ login
+!
+line aux 0
+ login
+!
+line vty 0 4
+ exec-timeout 5 0
+ logging synchronous
+ login local
+ transport input ssh
+!
+!
+ntp master 4
+!
+end
